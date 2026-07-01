@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//g/내 드라이브/$$GHTECH/**)",
+      "Bash(python3:*)",
+      "Bash(where npx:*)",
+      "mcp__Claude_Preview__preview_start"
+    ]
+  }
+}
