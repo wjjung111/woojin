@@ -10,7 +10,13 @@ $ErrorActionPreference = "Stop"
 $root     = Split-Path -Parent $MyInvocation.MyCommand.Path
 $dataFile = Join-Path $root "arap_index_data.js"
 $htmlFile = Join-Path $root "arap_집합건물v1.2.html"
-$apiKey   = "5d614fe2dbbb4cec9a79880ae479677c"
+# API 키는 저장소(공개)에 올리지 않는다 — 환경변수 RONE_API_KEY 또는 로컬파일 arap_apikey.local.txt에서 읽음.
+# 두 곳 다 없으면 지수 수신만 생략, 앱은 기존 데이터로 정상 작동.
+$apiKey = $env:RONE_API_KEY
+if (-not $apiKey) {
+  $keyFile = Join-Path $root "arap_apikey.local.txt"
+  if (Test-Path $keyFile) { $apiKey = (Get-Content $keyFile -Raw).Trim() }
+}
 $apiBase  = "https://www.reb.or.kr/r-one/openapi/SttsApiTblData.do"
 
 # 서울 지역코드 (R-ONE CLS_ID, 2026-07 확인 — 통계코드는 고정값)
@@ -30,6 +36,9 @@ $tables = [ordered]@{
 }
 
 function Fetch-IndexData {
+  if (-not $apiKey) {
+    throw "API 키가 없습니다. 같은 폴더에 'arap_apikey.local.txt' 파일을 만들고 부동산원 R-ONE 인증키를 한 줄로 넣으세요. (환경변수 RONE_API_KEY 로 넣어도 됨)"
+  }
   Write-Host "부동산원 매매가격지수 수신 중..." -ForegroundColor Cyan
   $out = [ordered]@{
     fetchedAt = (Get-Date -Format "yyyy-MM-dd HH:mm")

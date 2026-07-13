@@ -1,3 +1,7 @@
+# === ARAP 비밀값/로컬 파일 (깃허브에 올리지 않음) ===
+arap_apikey.local.txt        # 부동산원 R-ONE API 인증키 (개인 PC에만 보관)
+*.local.txt
+
 # Gradle files
 .gradle/
 build/
