@@ -1,0 +1,35 @@
+name: 지수 자동갱신
+
+# 매일 06:00(KST) 부동산원 매매가격지수를 받아 arap_index_data.js 갱신.
+# 수동 실행도 가능(Actions 탭 → Run workflow). API 키는 저장소 Secret(RONE_API_KEY)에서 읽음.
+on:
+  schedule:
+    - cron: '0 21 * * *'   # UTC 21:00 = KST 06:00
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 부동산원 지수 수신
+        shell: pwsh
+        env:
+          RONE_API_KEY: ${{ secrets.RONE_API_KEY }}
+        run: ./arap_launch.ps1 -FetchOnly
+
+      - name: 변경분만 커밋·푸시
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add arap_index_data.js
+          if git diff --staged --quiet; then
+            echo "지수 변동 없음 — 커밋 생략"
+          else
+            git commit -m "지수 자동갱신 (GitHub Actions)"
+            git push
+          fi
