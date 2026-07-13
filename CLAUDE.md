@@ -116,12 +116,16 @@
 > 템플릿 .docx는 html에 base64 내장이라 런타임에 안 불러옴 → `템플릿/`으로 옮겨도 앱 정상.
 
 ```
-woojin/ (저장소 루트)
+woojin/ (저장소 루트, GitHub: wjjung111/woojin)
 ├── arap_집합건물v1.2.html              ← ★현재 운영본 (직접수정 금지 → v1-3로 사본). 루트 고정
-├── ARAP 실행.bat                       ← ★사용자 진입점: 지수 자동수신(arap_launch.ps1) 후 v1.2 열기. 루트 고정
-├── arap_launch.ps1                    ← 부동산원 R-ONE API에서 지수 수신 → arap_index_data.js 생성 (키 내장). 루트 고정
+├── index.html                         ← GitHub Pages 진입점(→ v1.2.html 리다이렉트). 깔끔한 URL용. 루트 고정
+├── ARAP 실행.bat                       ← ★로컬 진입점: 지수 자동수신(arap_launch.ps1) 후 v1.2 열기. 루트 고정
+├── arap_launch.ps1                    ← 부동산원 R-ONE API에서 지수 수신 → arap_index_data.js 생성. 루트 고정
+│                                        (API키는 코드 미포함 — 환경변수 RONE_API_KEY 또는 arap_apikey.local.txt에서 읽음)
 ├── arap_index_data.js                 ← 매매가격지수 데이터 (자동생성 — 직접수정 금지). 루트 고정
+├── arap_apikey.local.txt              ← R-ONE 인증키 (개인 PC에만, .gitignore로 업로드 차단 — 저장소엔 없음)
 ├── CLAUDE.md                          ← 이 파일
+├── .github/workflows/update-index.yml ← 지수 자동갱신 Actions (매일 06:00 KST). 키는 저장소 Secret RONE_API_KEY
 ├── 템플릿/                            ← 현역 의견서 템플릿 4종(.docx) + 표지·청구서·명세표 시제품(.xlsx)
 │                                        (주거+비주거+여러호수 혼합본은 html에 base64 임베드)
 ├── 문서/                              ← 작업중_여러호수N호_설계.md (N호확장·시점수정 작업 인수인계 상세)
@@ -132,6 +136,30 @@ woojin/ (저장소 루트)
 > **현재 상태(2026-06-30)**: 집합건물 의견서 = 단일/여러호수 × 주거/비주거 + **주거·비주거 혼합**(호별 용도, 시점수정 사례별 자본수익률/매매지수)까지 완성. 엔진 핵심: `expandHoRows`(호 N개 표 복제), `expandSijeom`(사례별 시점수정 블록 복제), `normalizeMarkers`(쪼개진 마커 복원).
 >
 > **(2026-07-12) v1.2 운영본 = 시점수정 지수 자동계산 + 명세표 등기기준 고정**: 부동산원 R-ONE Open API로 아파트(`A_2024_00045`, 서울 구단위)·연립다세대(`A_2024_00080`, 권역단위만 공표 → 구 선택 시 자동 권역 대체) 매매가격지수를 받아, 시점수정치 모달의 [지수 자동계산] 패널이 산식 텍스트를 자동 생성. **규칙(확정): 거래시점·기준시점 둘 다 전월 지수 적용, 시점수정치 여섯째자리 반올림(부동산원 KAS 조회화면과 동일), 미공표월은 최근 공표분 대체, 날짜는 한글표기(점표기 YYYY.MM은 파서 오인 유발이라 금지).** 브라우저에서 API 직접 호출은 CORS 차단 → `ARAP 실행.bat`이 앱 열기 전에 `arap_launch.ps1`로 지수를 수신(`arap_index_data.js`)하는 구조. 데이터 파일 없어도 앱은 정상 동작(자동계산만 안내문구). 갱신: 파일 1일 초과 시 백그라운드 재수신. **명세표 층별면적(floorDetail)은 PDF 인식 프롬프트에서 등기 표제부 전용으로 고정**(건축물대장 층별현황 사용 금지 — 값이 달라 명세표 틀어짐). 상세는 [[작업중_여러호수N호_설계.md]] §14.
+
+## 7-1. 배포·실행 (2026-07-13 GitHub 이전)
+
+로컬 폴더 전용에서 **GitHub 저장소(`wjjung111/woojin`, Public) 중심**으로 이전함. 앱 실행 경로가 2가지가 됨.
+
+**① 크롬에서 URL로 실행 (GitHub Pages)** — 권장, 어느 기기든 접속
+- 주소: **https://wjjung111.github.io/woojin/** (`index.html`이 v1.2.html로 리다이렉트)
+- Pages 설정: Settings→Pages, `Deploy from a branch` / `main` / `/(root)`
+- main에 머지된 내용만 반영됨 (코드 고치면 main 머지 후에야 URL에 반영)
+- **지수 자동계산**: 저장소에 커밋된 `arap_index_data.js`를 그대로 사용 → 아래 ③ Actions가 매일 갱신하므로 최신 유지됨
+
+**② 로컬에서 `ARAP 실행.bat` 더블클릭** — 기존 방식, 오프라인·즉시 지수수신용
+- 이 방식으로 지수를 받으려면 PC에 `arap_apikey.local.txt`(R-ONE 키 한 줄) 필요
+
+**API 키 관리 (공개 저장소라 코드에 절대 안 넣음)**
+- `arap_launch.ps1`은 키를 **환경변수 `RONE_API_KEY`** 또는 **로컬파일 `arap_apikey.local.txt`**(`.gitignore`로 차단)에서 읽음. 코드엔 없음.
+- GitHub Actions용 키는 **저장소 Secret `RONE_API_KEY`** 에 저장(Settings→Secrets and variables→Actions).
+- 주의: 이전에 코드에 박혀 있던 키(`5d61…`)는 git 히스토리엔 남아있음. 무료 공공데이터 키라 유지(옵션 A) 중 — 폐기하려면 R-ONE에서 재발급 후 세 곳(로컬파일·Secret·친구 배포본) 모두 교체 필요.
+
+**③ 지수 자동갱신 (GitHub Actions)** — `.github/workflows/update-index.yml`
+- 매일 06:00(KST) + 수동실행(Actions 탭 Run workflow) → `arap_launch.ps1 -FetchOnly` 실행 → 변경분만 `arap_index_data.js` 자동 커밋
+- Pages는 정적 호스팅이라 코드 실행 불가 → 서버측 갱신은 Actions가 담당(브라우저 CORS 회피).
+
+> 배포 워크플로우: **작업 = 새 브랜치 → 수정 → PR → main 머지**. main 머지 시 Pages 자동 재배포. 운영본 직접수정 금지 원칙(§3-1)은 그대로.
 
 ## 8. 자주 하는 실수 (방지 체크리스트)
 
@@ -150,4 +178,4 @@ woojin/ (저장소 루트)
 
 ---
 
-**마지막 수정**: 2026-07-12 (집합건물 v1.2 운영 승격 = 시점수정 지수 자동계산 + 명세표 등기기준 고정)
+**마지막 수정**: 2026-07-13 (GitHub 이전 = Pages URL 실행 + Actions 지수 자동갱신 + API키 코드 분리. §7-1 참고)
