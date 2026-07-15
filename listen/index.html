@@ -2,285 +2,326 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<meta name="theme-color" content="#4f46e5">
-<title>영어 대화 듣기</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f172a">
+<title>기본동사 리스닝</title>
 <style>
-  :root{ --bg:#0f172a; --card:#1e293b; --card2:#273449; --line:#334155;
-         --txt:#e2e8f0; --sub:#94a3b8; --accent:#6366f1; --accent2:#22c55e; --hi:#fbbf24; }
+  :root{
+    --bg:#0b1120; --bg2:#0f172a; --card:#1a2438; --card2:#232f47; --line:#2c3a55;
+    --txt:#e8eefc; --sub:#93a3bf; --dim:#5b6b8a;
+    --accent:#6d8bff; --accent2:#22c55e; --hi:#ffd24a;
+    --have:#22b8cf; --make:#f472b6; --get:#a78bfa; --take:#fb923c;
+  }
   *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-  body{ margin:0; font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
-        background:var(--bg); color:var(--txt); line-height:1.5; }
-  header{ padding:16px 16px 10px; position:sticky; top:0; background:linear-gradient(180deg,#0f172a,#0f172aee);
-          backdrop-filter:blur(6px); z-index:5; border-bottom:1px solid var(--line); }
-  h1{ font-size:19px; margin:0; }
-  header .src{ font-size:12px; color:var(--sub); margin-top:3px; }
-  .wrap{ max-width:640px; margin:0 auto; padding:0 14px 130px; }
-  .card{ background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px; margin-top:14px; }
-  label{ font-size:13px; color:var(--sub); display:block; margin-bottom:6px; }
-  select, input[type=range]{ width:100%; }
-  select{ background:var(--card2); color:var(--txt); border:1px solid var(--line); border-radius:10px;
-          padding:11px 12px; font-size:15px; appearance:none; }
-  .seg{ display:flex; gap:8px; margin-top:2px; }
-  .seg button{ flex:1; background:var(--card2); color:var(--txt); border:1px solid var(--line);
-               border-radius:10px; padding:10px 0; font-size:14px; font-weight:600; }
-  .seg button.on{ background:var(--accent); border-color:var(--accent); color:#fff; }
-  .speedval{ font-weight:700; color:var(--hi); }
-  .btnrow{ display:flex; gap:8px; margin-top:12px; }
-  .togglebtn{ flex:1; background:var(--card2); border:1px solid var(--line); color:var(--txt); border-radius:10px;
-              padding:10px 6px; font-size:13.5px; font-weight:600; text-align:center; text-decoration:none; }
-  .togglebtn.on{ background:var(--accent2); border-color:var(--accent2); color:#04240f; }
+  html,body{ margin:0; height:100%; }
+  body{ font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+        background:radial-gradient(120% 90% at 50% 0%, #16203a 0%, var(--bg) 60%); color:var(--txt);
+        line-height:1.5; -webkit-font-smoothing:antialiased; }
+  .wrap{ max-width:680px; margin:0 auto; }
 
-  #script .ln{ padding:11px 12px; border-radius:12px; margin:8px 0; background:var(--card);
-               border:1px solid var(--line); cursor:pointer; transition:.15s; }
-  #script .ln.F{ border-left:4px solid #ec4899; }
-  #script .ln.M{ border-left:4px solid #38bdf8; }
-  #script .ln.active{ background:#3b3416; border-color:var(--hi); }
-  .who{ font-size:11px; font-weight:700; letter-spacing:.5px; }
-  .ln.F .who{ color:#f472b6; } .ln.M .who{ color:#7dd3fc; }
-  .en{ font-size:16px; margin-top:3px; }
-  .ko{ font-size:13px; color:var(--sub); margin-top:4px; }
-  .ko.hide{ display:none; }
-  .tap{ font-size:11px; color:var(--sub); float:right; }
+  /* ── 공통 헤더 ── */
+  header{ position:sticky; top:0; z-index:20; backdrop-filter:blur(10px);
+          background:linear-gradient(180deg, rgba(11,17,32,.96), rgba(11,17,32,.7));
+          border-bottom:1px solid var(--line); }
+  .hbar{ display:flex; align-items:center; gap:12px; padding:14px 16px; max-width:680px; margin:0 auto; }
+  .back{ width:36px; height:36px; flex:none; border-radius:11px; border:1px solid var(--line);
+         background:var(--card); color:var(--txt); font-size:18px; display:none; align-items:center; justify-content:center; }
+  .htitle{ font-size:17px; font-weight:800; letter-spacing:-.2px; }
+  .hsub{ font-size:11.5px; color:var(--sub); margin-top:1px; }
 
-  .bar{ position:fixed; left:0; right:0; bottom:0; background:#111827f2; backdrop-filter:blur(8px);
-        border-top:1px solid var(--line); padding:12px 14px calc(12px + env(safe-area-inset-bottom));
-        display:flex; justify-content:center; z-index:10; }
-  .bar .wrap2{ max-width:640px; width:100%; display:flex; gap:10px; }
-  .play{ flex:2; background:var(--accent2); color:#04240f; border:none; border-radius:12px;
-         font-size:17px; font-weight:800; padding:15px 0; }
-  .play.playing{ background:var(--hi); }
-  .stop{ flex:1; background:var(--card2); color:var(--txt); border:1px solid var(--line); border-radius:12px;
-         font-size:15px; font-weight:700; }
-  .tip{ font-size:12px; color:var(--sub); margin-top:14px; line-height:1.7; }
-  .tip b{ color:var(--txt); }
-  .warn{ background:#3f2d0b; border:1px solid #a16207; color:#fde68a; font-size:13px; padding:10px 12px;
-         border-radius:10px; margin-top:12px; display:none; }
-  .loading{ text-align:center; color:var(--sub); padding:30px 0; }
+  /* ── 홈: 챕터 그리드 ── */
+  .home-hero{ padding:26px 18px 6px; }
+  .home-hero h1{ font-size:25px; margin:0 0 4px; letter-spacing:-.5px; }
+  .home-hero p{ margin:0; color:var(--sub); font-size:13.5px; }
+  .grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; padding:16px; }
+  .verb{ position:relative; border-radius:18px; padding:18px 16px 16px; min-height:118px;
+         background:var(--card); border:1px solid var(--line); overflow:hidden; cursor:pointer;
+         transition:transform .12s, border-color .12s; display:flex; flex-direction:column; justify-content:space-between; }
+  .verb:active{ transform:scale(.97); }
+  .verb .word{ font-size:30px; font-weight:800; letter-spacing:-.5px; line-height:1; }
+  .verb .ko{ font-size:12.5px; color:var(--sub); margin-top:7px; }
+  .verb .meta{ font-size:11px; color:var(--dim); margin-top:10px; display:flex; gap:8px; align-items:center; }
+  .verb .glow{ position:absolute; right:-30px; top:-30px; width:110px; height:110px; border-radius:50%;
+               filter:blur(30px); opacity:.5; }
+  .verb.locked{ opacity:.5; cursor:default; }
+  .verb.locked:active{ transform:none; }
+  .badge{ font-size:10px; font-weight:700; padding:3px 8px; border-radius:999px; border:1px solid var(--line);
+          color:var(--sub); background:#0e1830; }
+  .badge.ready{ color:#062015; background:var(--accent2); border-color:var(--accent2); }
+
+  /* ── 플레이어 화면 ── */
+  #player{ display:none; }
+  .tabs{ display:flex; gap:8px; padding:12px 16px 4px; max-width:680px; margin:0 auto; }
+  .tab{ flex:1; text-align:center; padding:10px 0; border-radius:12px; font-size:14px; font-weight:700;
+        background:var(--card); border:1px solid var(--line); color:var(--sub); }
+  .tab.on{ background:var(--accent); border-color:var(--accent); color:#fff; }
+
+  /* 가사(스크립트) */
+  #lyrics{ padding:8px 12px 190px; max-width:680px; margin:0 auto; }
+  .lyric{ padding:14px 14px; border-radius:16px; margin:6px 0; cursor:pointer;
+          transition:background .2s, opacity .25s, transform .2s; opacity:.42; }
+  .lyric .who{ font-size:10.5px; font-weight:800; letter-spacing:.6px; text-transform:uppercase; }
+  .lyric.F .who{ color:#f9a8d4; } .lyric.M .who{ color:#93c5fd; }
+  .lyric .en{ font-size:19px; font-weight:650; letter-spacing:-.2px; margin-top:3px; line-height:1.32; }
+  .lyric .ko{ font-size:13.5px; color:var(--sub); margin-top:5px; }
+  .lyric .ko.hide{ display:none; }
+  .lyric.active{ opacity:1; background:linear-gradient(100deg, rgba(109,139,255,.16), rgba(109,139,255,.04));
+                 transform:scale(1.015); }
+  .lyric.active .en{ color:#fff; }
+  .lyric.active.F{ box-shadow:inset 3px 0 0 #ec4899; }
+  .lyric.active.M{ box-shadow:inset 3px 0 0 #38bdf8; }
+  .lyric.done{ opacity:.30; }
+
+  /* 원문 이미지 */
+  #reading{ display:none; padding:10px 10px 60px; max-width:680px; margin:0 auto; }
+  #reading .note{ font-size:12px; color:var(--sub); text-align:center; padding:6px 10px 12px; }
+  #reading img{ width:100%; height:auto; display:block; border-radius:12px; margin:10px 0;
+                background:#fff; border:1px solid var(--line); }
+  .pageno{ text-align:center; font-size:11px; color:var(--dim); margin-top:-4px; }
+
+  /* 하단 컨트롤바 */
+  .dock{ position:fixed; left:0; right:0; bottom:0; z-index:30; padding:10px 14px calc(10px + env(safe-area-inset-bottom));
+         background:linear-gradient(180deg, rgba(11,17,32,.4), rgba(11,17,32,.97) 30%); backdrop-filter:blur(10px);
+         border-top:1px solid var(--line); display:none; }
+  .dock .wrap{ display:flex; flex-direction:column; gap:9px; }
+  .opts{ display:flex; gap:7px; }
+  .chip{ flex:1; background:var(--card); border:1px solid var(--line); color:var(--txt); border-radius:10px;
+         padding:8px 4px; font-size:12.5px; font-weight:600; text-align:center; text-decoration:none; white-space:nowrap; }
+  .chip.on{ background:var(--accent2); border-color:var(--accent2); color:#062015; }
+  .speedwrap{ display:flex; align-items:center; gap:10px; font-size:12px; color:var(--sub); }
+  .speedwrap input{ flex:1; }
+  .speedval{ color:var(--hi); font-weight:800; min-width:44px; text-align:right; font-variant-numeric:tabular-nums; }
+  .transport{ display:flex; gap:10px; }
+  .play{ flex:2; background:var(--accent2); color:#052012; border:none; border-radius:13px;
+         font-size:16px; font-weight:800; padding:14px 0; }
+  .play.on{ background:var(--hi); color:#3a2c00; }
+  .stop{ flex:1; background:var(--card2); color:var(--txt); border:1px solid var(--line); border-radius:13px;
+         font-size:14px; font-weight:700; }
+  .hint{ text-align:center; color:var(--dim); font-size:11px; padding-top:2px; }
 </style>
 </head>
 <body>
+
 <header>
-  <div class="wrap" style="padding-bottom:0">
-    <h1>🎧 영어 대화 듣기</h1>
-    <div class="src">미국 원어민 신경망 음성(Azure Neural) · 김재우 기본동사100 기반 · 무료</div>
+  <div class="hbar">
+    <button class="back" id="back">‹</button>
+    <div>
+      <div class="htitle" id="htitle">🎧 기본동사 리스닝</div>
+      <div class="hsub" id="hsub">김재우 기본동사100 · 원어민 신경망 음성</div>
+    </div>
   </div>
 </header>
 
-<div class="wrap">
-
-  <div class="card">
-    <label>챕터 고르기</label>
-    <select id="topic"></select>
-
-    <div style="height:14px"></div>
-    <label>대화 길이</label>
-    <div class="seg" id="lenSeg">
-      <button data-len="short">짧게</button>
-      <button data-len="medium" class="on">보통</button>
-      <button data-len="full">전체</button>
-    </div>
-
-    <div style="height:14px"></div>
-    <label>말 속도 : <span class="speedval" id="spdLabel">1.00배</span> <span style="color:var(--sub)">(느리게 ↔ 빠르게)</span></label>
-    <input type="range" id="speed" min="0.5" max="1.5" step="0.05" value="1">
-
-    <div class="btnrow">
-      <button class="togglebtn on" id="transBtn">번역 : 켬</button>
-      <button class="togglebtn" id="repeatBtn">문장 반복 : 끔</button>
-      <a class="togglebtn" id="dlBtn" download>mp3 저장</a>
-    </div>
+<!-- 홈 -->
+<main id="home" class="wrap">
+  <div class="home-hero">
+    <h1>어떤 동사부터?</h1>
+    <p>동사 하나를 골라 대화를 들어보세요. 유튜브 가사처럼 지금 나오는 문장이 강조됩니다.</p>
   </div>
+  <div class="grid" id="grid"></div>
+</main>
 
-  <div class="warn" id="warnBox"></div>
-
-  <div id="script"><div class="loading">챕터를 불러오는 중...</div></div>
-
-  <div class="tip">
-    💡 문장을 <b>탭</b>하면 그 문장만 들려요. <b>문장 반복</b>을 켜고 탭하면 계속 반복(섀도잉).<br>
-    · 속도는 재생 중에도 바로 바뀝니다. 목소리 톤은 유지한 채 빠르기만 변해요.<br>
-    · <b>mp3 저장</b>을 누르면 이 챕터 전체 음성이 폰에 저장됩니다 (오프라인용).
+<!-- 플레이어 -->
+<main id="player">
+  <div class="tabs">
+    <div class="tab on" id="tabListen" data-t="listen">듣기</div>
+    <div class="tab" id="tabRead" data-t="read">원문</div>
   </div>
-</div>
+  <div id="lyrics" class="wrap"></div>
+  <div id="reading" class="wrap"></div>
+</main>
 
-<div class="bar">
-  <div class="wrap2">
-    <button class="play" id="playBtn">▶ 재생</button>
-    <button class="stop" id="stopBtn">■ 정지</button>
+<!-- 하단 재생바 -->
+<div class="dock" id="dock">
+  <div class="wrap">
+    <div class="speedwrap">
+      <span>속도</span>
+      <input type="range" id="speed" min="0.5" max="1.5" step="0.05" value="1">
+      <span class="speedval" id="spdLabel">1.00×</span>
+    </div>
+    <div class="opts">
+      <button class="chip on" id="transBtn">번역 켬</button>
+      <button class="chip" id="repeatBtn">한문장 반복</button>
+      <a class="chip" id="dlBtn" download>mp3 저장</a>
+    </div>
+    <div class="transport">
+      <button class="play" id="playBtn">▶ 재생</button>
+      <button class="stop" id="stopBtn">■ 정지</button>
+    </div>
+    <div class="hint">문장을 탭하면 그 부분부터 재생돼요</div>
   </div>
 </div>
 
 <script>
 "use strict";
 const $ = id => document.getElementById(id);
-const topicSel=$("topic"), speed=$("speed"), spdLabel=$("spdLabel"), scriptEl=$("script"),
-      playBtn=$("playBtn"), stopBtn=$("stopBtn"), transBtn=$("transBtn"),
-      repeatBtn=$("repeatBtn"), dlBtn=$("dlBtn"), warnBox=$("warnBox");
-const LEN = { short:6, medium:12, full:9999 };
+const VERBS = [
+  { verb:"have", ko:"있다·먹다·겪다·열다", color:"var(--have)" },
+  { verb:"make", ko:"해주다·되게하다·시키다", color:"var(--make)" },
+  { verb:"get",  ko:"얻다·되다·이해하다",   color:"var(--get)" },
+  { verb:"take", ko:"가져가다·타다·걸리다",  color:"var(--take)" },
+];
+let manifest=[], byVerb={}, dlg=null, timings=null, chapter=null;
+let showTrans=true, repeatOne=false, playing=false, paused=false, mode="all", curIdx=-1, oneIdx=-1;
 
-let manifest=[], dlg=null, timings=null;   // timings: 각 문장의 full.mp3 내 [시작,끝] 초
-let curLen="medium", showTrans=true, repeatOne=false;
-let playing=false, paused=false, mode="all", curIdx=-1, oneIdx=-1;
+const player = new Audio(); player.preload="auto";
+try{ player.preservesPitch=true; player.webkitPreservesPitch=true; }catch(e){ console.error("preservesPitch 미지원",e); }
 
-// 전체 대화가 한 파일이라 문장 사이 로딩 끊김이 없음 — 자연스러운 흐름의 핵심
-const player = new Audio();
-player.preload = "auto";
-try{ player.preservesPitch = true; player.webkitPreservesPitch = true; }catch(e){ console.error("preservesPitch 미지원", e); }
-
-function warn(msg){ warnBox.style.display="block"; warnBox.innerHTML=msg; }
-
-/* ── 데이터 로드 ── */
-async function loadManifest(){
+/* ── 홈 그리드 ── */
+async function boot(){
   try{
-    const r = await fetch("manifest.json", {cache:"no-cache"});
-    if(!r.ok) throw new Error(r.status);
-    manifest = await r.json();
-  }catch(e){
-    console.error("manifest 로드 실패", e);
-    warn("음성 목록을 불러오지 못했어요. 아직 음성 생성 중일 수 있으니 <b>몇 분 뒤 새로고침</b> 해주세요.");
-    scriptEl.innerHTML=""; return;
-  }
-  topicSel.innerHTML="";
-  manifest.forEach((m,i)=>{ const o=document.createElement("option"); o.value=i; o.textContent=m.title; topicSel.appendChild(o); });
-  await loadDialogue();
-}
-async function loadDialogue(){
-  stop();
-  const m = manifest[+topicSel.value];
-  if(!m) return;
-  scriptEl.innerHTML='<div class="loading">대본을 불러오는 중...</div>';
-  try{
-    const [r1, r2] = await Promise.all([
-      fetch(`dialogues/${m.id}.json`, {cache:"no-cache"}),
-      fetch(`audio/${m.id}/timings.json`, {cache:"no-cache"})
-    ]);
-    if(!r1.ok) throw new Error("dialogue "+r1.status);
-    dlg = await r1.json();
-    timings = r2.ok ? await r2.json() : null;   // 없으면(구버전 음성) 문장별 파일 재생으로 대체
-  }catch(e){
-    console.error("대본 로드 실패", e);
-    scriptEl.innerHTML='<div class="loading">대본을 불러오지 못했어요. 새로고침 해주세요.</div>'; return;
-  }
-  player.src = `audio/${dlg.id}/full.mp3`;
-  player.playbackRate = +speed.value;
-  dlBtn.href = `audio/${dlg.id}/full.mp3`;
-  dlBtn.setAttribute("download", `${dlg.id}.mp3`);
-  render();
-}
-
-/* ── 렌더 ── */
-function curLines(){ return dlg ? dlg.lines.slice(0, LEN[curLen]) : []; }
-function render(){
-  const lines=curLines();
-  scriptEl.innerHTML="";
-  lines.forEach((ln,idx)=>{
-    const d=document.createElement("div");
-    d.className="ln "+ln.s; d.dataset.i=idx;
-    d.innerHTML=`<span class="who">${ln.s==="F"?"👩 A":"👨 B"}</span><span class="tap">탭 = 이 문장 ▶</span>
-      <div class="en">${ln.en}</div><div class="ko${showTrans?"":" hide"}">${ln.ko}</div>`;
-    d.onclick=()=>playOne(idx);
-    scriptEl.appendChild(d);
+    const r = await fetch("manifest.json",{cache:"no-cache"});
+    manifest = r.ok ? await r.json() : [];
+  }catch(e){ console.error("manifest 실패",e); manifest=[]; }
+  byVerb={}; manifest.forEach(m=>byVerb[m.verb]=m);
+  const grid=$("grid"); grid.innerHTML="";
+  VERBS.forEach(v=>{
+    const m = byVerb[v.verb];
+    const ready = !!m;
+    const el=document.createElement("div");
+    el.className="verb"+(ready?"":" locked");
+    el.innerHTML=`<div class="glow" style="background:${v.color}"></div>
+      <div><div class="word" style="color:${v.color}">${v.verb}</div><div class="ko">${v.ko}</div></div>
+      <div class="meta">${ ready
+        ? `<span class="badge ready">듣기</span>${m.pages?'<span class="badge">원문</span>':''}<span>${m.lines}문장</span>`
+        : `<span class="badge">준비 중</span>` }</div>`;
+    if(ready) el.onclick=()=>openChapter(v.verb);
+    grid.appendChild(el);
   });
 }
-function highlight(idx){
-  if(idx===curIdx) return;
-  curIdx=idx;
-  scriptEl.querySelectorAll(".ln").forEach(el=>el.classList.remove("active"));
-  if(idx==null || idx<0) return;
-  const el=scriptEl.querySelector(`.ln[data-i="${idx}"]`);
-  if(el){ el.classList.add("active"); el.scrollIntoView({behavior:"smooth",block:"center"}); }
+
+/* ── 챕터 열기 ── */
+async function openChapter(verb){
+  chapter = byVerb[verb];
+  try{
+    const [r1,r2]=await Promise.all([
+      fetch(`dialogues/${verb}.json`,{cache:"no-cache"}),
+      fetch(`audio/${verb}/timings.json`,{cache:"no-cache"})
+    ]);
+    dlg = await r1.json();
+    timings = r2.ok ? await r2.json() : null;
+  }catch(e){ console.error("챕터 로드 실패",e); alert("아직 음성이 생성 중일 수 있어요. 잠시 후 새로고침 해주세요."); return; }
+  player.src=`audio/${verb}/full.mp3`; player.playbackRate=+$("speed").value;
+  $("dlBtn").href=`audio/${verb}/full.mp3`; $("dlBtn").setAttribute("download",`${verb}.mp3`);
+
+  $("htitle").textContent = verb;
+  $("hsub").textContent = dlg.title;
+  $("back").style.display="flex";
+  $("home").style.display="none";
+  $("player").style.display="block";
+  $("dock").style.display="block";
+  $("tabRead").style.display = (chapter.pages>0)?"block":"none";
+  switchTab("listen");
+  renderLyrics(); renderReading();
+  window.scrollTo(0,0);
+}
+function goHome(){
+  stop(); $("player").style.display="none"; $("dock").style.display="none";
+  $("home").style.display="block"; $("back").style.display="none";
+  $("htitle").textContent="🎧 기본동사 리스닝"; $("hsub").textContent="김재우 기본동사100 · 원어민 신경망 음성";
+  window.scrollTo(0,0);
+}
+$("back").onclick=goHome;
+
+/* ── 탭 ── */
+function switchTab(t){
+  $("tabListen").classList.toggle("on",t==="listen");
+  $("tabRead").classList.toggle("on",t==="read");
+  $("lyrics").style.display = t==="listen"?"block":"none";
+  $("reading").style.display = t==="read"?"block":"none";
+  $("dock").style.display = t==="listen"?"block":"none";
+}
+$("tabListen").onclick=()=>switchTab("listen");
+$("tabRead").onclick=()=>switchTab("read");
+
+/* ── 가사 렌더 ── */
+function renderLyrics(){
+  const box=$("lyrics"); box.innerHTML="";
+  dlg.lines.forEach((ln,i)=>{
+    const d=document.createElement("div");
+    d.className="lyric "+ln.s; d.dataset.i=i;
+    d.innerHTML=`<div class="who">${ln.s==="F"?"👩 A":"👨 B"}</div>
+      <div class="en">${ln.en}</div><div class="ko${showTrans?"":" hide"}">${ln.ko}</div>`;
+    d.onclick=()=>playFrom(i);
+    box.appendChild(d);
+  });
+  curIdx=-1;
+}
+function renderReading(){
+  const box=$("reading"); box.innerHTML="";
+  if(!chapter.pages){ box.innerHTML='<div class="note">이 챕터는 원문 페이지가 없어요.</div>'; return; }
+  box.innerHTML='<div class="note">📖 김재우 기본동사100 원문 · 개인 학습용 · 두 손가락으로 확대하세요</div>';
+  for(let i=1;i<=chapter.pages;i++){
+    const img=document.createElement("img");
+    img.loading="lazy"; img.src=`pages/${chapter.verb}/${String(i).padStart(2,"0")}.jpg`;
+    img.alt=`${chapter.verb} 원문 ${i}`;
+    box.appendChild(img);
+  }
 }
 
-/* ── 연속 재생 엔진 (full.mp3 + 시간표) ── */
-function seekPlay(t){
-  const go=()=>{ player.currentTime=t; player.playbackRate=+speed.value;
-    player.play().catch(e=>{ console.error("재생 실패", e);
-      warn("음성 파일이 아직 준비 안 됐을 수 있어요. 몇 분 뒤 새로고침 해주세요."); stop(); }); };
-  if(player.readyState>=1) go();
-  else player.addEventListener("loadedmetadata", go, {once:true});
+/* ── 싱크 하이라이트 ── */
+function setActive(i){
+  if(i===curIdx) return;
+  const box=$("lyrics");
+  const prev=box.querySelector(".lyric.active"); if(prev){ prev.classList.remove("active"); prev.classList.add("done"); }
+  curIdx=i;
+  if(i<0) return;
+  const el=box.querySelector(`.lyric[data-i="${i}"]`);
+  if(el){ el.classList.remove("done"); el.classList.add("active");
+    el.scrollIntoView({behavior:"smooth", block:"center"}); }
 }
-function cutoffEnd(){ const n=curLines().length; return timings ? timings[n-1].e : Infinity; }
-function idxAt(t){
-  if(!timings) return -1;
-  for(let i=curLines().length-1;i>=0;i--) if(t>=timings[i].s-0.05) return i;
-  return 0;
-}
-player.ontimeupdate = ()=>{
-  if(!playing || !timings) return;
+function idxAt(t){ if(!timings) return -1;
+  for(let i=timings.length-1;i>=0;i--) if(t>=timings[i].s-0.05) return i; return 0; }
+
+player.ontimeupdate=()=>{
+  if(!playing||!timings) return;
   const t=player.currentTime;
   if(mode==="one"){
-    if(t>=timings[oneIdx].e-0.02){
-      if(repeatOne) player.currentTime=timings[oneIdx].s;
-      else stop();
-    }
+    if(t>=timings[oneIdx].e-0.02){ if(repeatOne){ player.currentTime=timings[oneIdx].s; } else stop(); }
     return;
   }
-  if(t>=cutoffEnd()-0.02){ stop(); return; }
-  highlight(idxAt(t));
+  setActive(idxAt(t));
 };
-player.onended = ()=>{ if(playing){ if(mode==="one"&&repeatOne){ seekPlay(timings?timings[oneIdx].s:0); } else stop(); } };
-player.onerror = ()=>{ if(player.src){ console.error("오디오 오류", player.error);
-  warn("음성 파일을 불러오지 못했어요. 몇 분 뒤 새로고침 해주세요."); stop(); } };
+player.onended=()=>{ if(mode==="one"&&repeatOne&&playing){ player.currentTime=timings?timings[oneIdx].s:0; player.play(); } else stop(); };
+player.onerror=()=>{ if(player.src){ console.error("audio err",player.error); } };
 
-/* 문장별 파일 재생 (timings 없을 때 예비 경로) */
-function playSegFallback(idx){
-  player.src=`audio/${dlg.id}/${String(idx).padStart(3,"0")}.mp3`;
-  player.onended0 = null;
-  highlight(idx);
-  player.playbackRate=+speed.value;
-  player.play().catch(e=>console.error(e));
-  player.onended=()=>{
-    if(!playing) return;
-    if(mode==="one"){ if(repeatOne){ setTimeout(()=>playing&&playSegFallback(idx),400); } else stop(); return; }
-    const next=idx+1;
-    if(next>=curLines().length){ stop(); return; }
-    setTimeout(()=>playing&&playSegFallback(next),250);
-  };
-}
+/* ── 재생 제어 ── */
+function seek(t){ const go=()=>{ player.currentTime=t; player.playbackRate=+$("speed").value;
+    player.play().catch(e=>console.error("play 실패",e)); };
+  if(player.readyState>=1) go(); else player.addEventListener("loadedmetadata",go,{once:true}); }
+function playAll(){ mode="all"; playing=true; paused=false; ui(true); if(timings) setActive(0); seek(timings?timings[0].s:0); }
+function playFrom(i){ mode="all"; playing=true; paused=false; ui(true); setActive(i); seek(timings?timings[i].s:0); }
+function playOneRepeat(i){ mode="one"; oneIdx=i; playing=true; paused=false; ui(true); setActive(i); seek(timings[i].s); }
+function stop(){ playing=false; paused=false; player.pause(); ui(false);
+  const a=$("lyrics").querySelector(".lyric.active"); if(a) a.classList.remove("active"); curIdx=-1; }
+function ui(on){ $("playBtn").textContent = on?"⏸ 일시정지":"▶ 재생"; $("playBtn").classList.toggle("on",on); }
 
-function playAll(){
-  if(!dlg) return;
-  mode="all"; playing=true; paused=false; setPlayUI(true);
-  if(timings){ highlight(0); seekPlay(0); }
-  else playSegFallback(0);
-}
-function playOne(idx){
-  if(!dlg) return;
-  mode="one"; oneIdx=idx; playing=true; paused=false; setPlayUI(true);
-  if(timings){ highlight(idx); seekPlay(timings[idx].s); }
-  else playSegFallback(idx);
-}
-function stop(){
-  playing=false; paused=false;
-  player.pause();
-  if(timings && dlg){ /* src 유지 — 다음 재생 즉시 시작 */ }
-  setPlayUI(false); highlight(null);
-}
-function setPlayUI(on){
-  playBtn.textContent = on ? "⏸ 일시정지" : "▶ 재생";
-  playBtn.classList.toggle("playing", on);
-}
-playBtn.onclick=()=>{
-  if(playing){ player.pause(); playing=false; paused=true; setPlayUI(false); playBtn.textContent="▶ 이어재생"; }
-  else if(paused){ playing=true; paused=false; setPlayUI(true); player.play().catch(e=>console.error(e)); }
+$("playBtn").onclick=()=>{
+  if(playing){ player.pause(); playing=false; paused=true; ui(false); $("playBtn").textContent="▶ 이어재생"; }
+  else if(paused){ playing=true; paused=false; ui(true); player.play().catch(e=>console.error(e)); }
   else playAll();
 };
-stopBtn.onclick=stop;
+$("stopBtn").onclick=stop;
 
-/* ── 옵션들 ── */
-speed.oninput=()=>{ spdLabel.textContent=(+speed.value).toFixed(2)+"배"; player.playbackRate=+speed.value; };
-transBtn.onclick=()=>{ showTrans=!showTrans;
-  transBtn.textContent="번역 : "+(showTrans?"켬":"끔"); transBtn.classList.toggle("on",showTrans);
-  scriptEl.querySelectorAll(".ko").forEach(k=>k.classList.toggle("hide",!showTrans)); };
-repeatBtn.onclick=()=>{ repeatOne=!repeatOne;
-  repeatBtn.textContent="문장 반복 : "+(repeatOne?"켬":"끔"); repeatBtn.classList.toggle("on",repeatOne); };
-$("lenSeg").querySelectorAll("button").forEach(b=>{
-  b.onclick=()=>{ $("lenSeg").querySelectorAll("button").forEach(x=>x.classList.remove("on"));
-    b.classList.add("on"); curLen=b.dataset.len; stop(); render(); };
-});
-topicSel.onchange=loadDialogue;
+/* 문장 탭: 한문장 반복이 켜져 있으면 그 문장만 반복, 아니면 그 지점부터 이어재생 */
+function playFromTap(i){ if(repeatOne) playOneRepeat(i); else playFrom(i); }
+// renderLyrics에서 onclick=playFrom(i) 였는데 반복모드 반영 위해 교체
+function bindLyricTaps(){ $("lyrics").querySelectorAll(".lyric").forEach(el=>{
+  el.onclick=()=>playFromTap(+el.dataset.i); }); }
 
-loadManifest();
+/* ── 옵션 ── */
+$("speed").oninput=()=>{ $("spdLabel").textContent=(+$("speed").value).toFixed(2)+"×"; player.playbackRate=+$("speed").value; };
+$("transBtn").onclick=()=>{ showTrans=!showTrans; $("transBtn").textContent="번역 "+(showTrans?"켬":"끔");
+  $("transBtn").classList.toggle("on",showTrans);
+  $("lyrics").querySelectorAll(".ko").forEach(k=>k.classList.toggle("hide",!showTrans)); };
+$("repeatBtn").onclick=()=>{ repeatOne=!repeatOne; $("repeatBtn").textContent="한문장 반복"+(repeatOne?" ●":"");
+  $("repeatBtn").classList.toggle("on",repeatOne);
+  if(!repeatOne && mode==="one") mode="all"; };
+
+// 최초 렌더 후 탭 바인딩 재적용
+const _rl=renderLyrics; renderLyrics=function(){ _rl(); bindLyricTaps(); };
+
+boot();
 </script>
 </body>
 </html>

@@ -106,9 +106,11 @@ async def main():
         data = await build_dialogue(f, sil_bytes, sil_dur)
         manifest.append({
             "id": data["id"],
+            "verb": data.get("verb", data["id"]),
             "order": data.get("order", 999),
             "title": data["title"],
             "lines": len(data["lines"]),
+            "pages": data.get("pages", 0),
         })
     manifest.sort(key=lambda m: m["order"])
     (ROOT / "manifest.json").write_text(
