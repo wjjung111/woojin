@@ -1,0 +1,49 @@
+name: 영어듣기 음성 생성
+
+# listen/dialogues/ 의 대본이 바뀌면 Azure Neural 음성(edge-tts)으로
+# 문장별 mp3 + 전체 mp3를 생성해 listen/audio/ 에 커밋.
+# 수동 실행도 가능(Actions 탭 → Run workflow).
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'listen/dialogues/**'
+      - 'listen/generate.py'
+      - '.github/workflows/generate-listen-audio.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: listen-audio
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: edge-tts 설치
+        run: pip install edge-tts
+
+      - name: 음성 생성
+        run: python listen/generate.py
+
+      - name: 변경분만 커밋·푸시
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add listen/audio listen/manifest.json
+          if git diff --staged --quiet; then
+            echo "음성 변동 없음 — 커밋 생략"
+          else
+            git commit -m "영어듣기 음성 자동생성 (GitHub Actions)"
+            git pull --rebase origin main
+            git push
+          fi
