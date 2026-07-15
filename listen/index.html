@@ -118,9 +118,11 @@ const topicSel=$("topic"), speed=$("speed"), spdLabel=$("spdLabel"), scriptEl=$(
       repeatBtn=$("repeatBtn"), dlBtn=$("dlBtn"), warnBox=$("warnBox");
 const LEN = { short:6, medium:12, full:9999 };
 
-let manifest=[], dlg=null;          // 현재 챕터 데이터
+let manifest=[], dlg=null, timings=null;   // timings: 각 문장의 full.mp3 내 [시작,끝] 초
 let curLen="medium", showTrans=true, repeatOne=false;
-let playing=false, paused=false, qi=0, mode="all";   // mode: all | one
+let playing=false, paused=false, mode="all", curIdx=-1, oneIdx=-1;
+
+// 전체 대화가 한 파일이라 문장 사이 로딩 끊김이 없음 — 자연스러운 흐름의 핵심
 const player = new Audio();
 player.preload = "auto";
 try{ player.preservesPitch = true; player.webkitPreservesPitch = true; }catch(e){ console.error("preservesPitch 미지원", e); }
@@ -145,16 +147,22 @@ async function loadManifest(){
 async function loadDialogue(){
   stop();
   const m = manifest[+topicSel.value];
-  if(!m){ return; }
+  if(!m) return;
   scriptEl.innerHTML='<div class="loading">대본을 불러오는 중...</div>';
   try{
-    const r = await fetch(`dialogues/${m.id}.json`, {cache:"no-cache"});
-    if(!r.ok) throw new Error(r.status);
-    dlg = await r.json();
+    const [r1, r2] = await Promise.all([
+      fetch(`dialogues/${m.id}.json`, {cache:"no-cache"}),
+      fetch(`audio/${m.id}/timings.json`, {cache:"no-cache"})
+    ]);
+    if(!r1.ok) throw new Error("dialogue "+r1.status);
+    dlg = await r1.json();
+    timings = r2.ok ? await r2.json() : null;   // 없으면(구버전 음성) 문장별 파일 재생으로 대체
   }catch(e){
     console.error("대본 로드 실패", e);
     scriptEl.innerHTML='<div class="loading">대본을 불러오지 못했어요. 새로고침 해주세요.</div>'; return;
   }
+  player.src = `audio/${dlg.id}/full.mp3`;
+  player.playbackRate = +speed.value;
   dlBtn.href = `audio/${dlg.id}/full.mp3`;
   dlBtn.setAttribute("download", `${dlg.id}.mp3`);
   render();
@@ -175,37 +183,77 @@ function render(){
   });
 }
 function highlight(idx){
+  if(idx===curIdx) return;
+  curIdx=idx;
   scriptEl.querySelectorAll(".ln").forEach(el=>el.classList.remove("active"));
-  if(idx==null) return;
+  if(idx==null || idx<0) return;
   const el=scriptEl.querySelector(`.ln[data-i="${idx}"]`);
   if(el){ el.classList.add("active"); el.scrollIntoView({behavior:"smooth",block:"center"}); }
 }
 
-/* ── 재생 엔진 (문장별 mp3 순차 재생) ── */
-function srcFor(idx){ return `audio/${dlg.id}/${String(idx).padStart(3,"0")}.mp3`; }
-function playSeg(idx){
-  player.src = srcFor(idx);
-  player.playbackRate = +speed.value;
-  highlight(idx);
-  player.play().catch(e=>{ console.error("재생 실패", e);
-    warn("음성 파일이 아직 준비 안 됐을 수 있어요. 몇 분 뒤 새로고침 해주세요."); stop(); });
+/* ── 연속 재생 엔진 (full.mp3 + 시간표) ── */
+function seekPlay(t){
+  const go=()=>{ player.currentTime=t; player.playbackRate=+speed.value;
+    player.play().catch(e=>{ console.error("재생 실패", e);
+      warn("음성 파일이 아직 준비 안 됐을 수 있어요. 몇 분 뒤 새로고침 해주세요."); stop(); }); };
+  if(player.readyState>=1) go();
+  else player.addEventListener("loadedmetadata", go, {once:true});
 }
-player.onended = ()=>{
-  if(!playing) return;
+function cutoffEnd(){ const n=curLines().length; return timings ? timings[n-1].e : Infinity; }
+function idxAt(t){
+  if(!timings) return -1;
+  for(let i=curLines().length-1;i>=0;i--) if(t>=timings[i].s-0.05) return i;
+  return 0;
+}
+player.ontimeupdate = ()=>{
+  if(!playing || !timings) return;
+  const t=player.currentTime;
   if(mode==="one"){
-    if(repeatOne){ setTimeout(()=>{ if(playing) playSeg(qi); }, 500); }
-    else stop();
+    if(t>=timings[oneIdx].e-0.02){
+      if(repeatOne) player.currentTime=timings[oneIdx].s;
+      else stop();
+    }
     return;
   }
-  qi++;
-  if(qi >= curLines().length){ stop(); return; }
-  setTimeout(()=>{ if(playing) playSeg(qi); }, 250);   // 문장 사이 살짝 쉼
+  if(t>=cutoffEnd()-0.02){ stop(); return; }
+  highlight(idxAt(t));
 };
-function playAll(){ if(!dlg) return; mode="all"; qi=0; playing=true; paused=false; setPlayUI(true); playSeg(0); }
-function playOne(idx){ if(!dlg) return; mode="one"; qi=idx; playing=true; paused=false; setPlayUI(true); playSeg(idx); }
+player.onended = ()=>{ if(playing){ if(mode==="one"&&repeatOne){ seekPlay(timings?timings[oneIdx].s:0); } else stop(); } };
+player.onerror = ()=>{ if(player.src){ console.error("오디오 오류", player.error);
+  warn("음성 파일을 불러오지 못했어요. 몇 분 뒤 새로고침 해주세요."); stop(); } };
+
+/* 문장별 파일 재생 (timings 없을 때 예비 경로) */
+function playSegFallback(idx){
+  player.src=`audio/${dlg.id}/${String(idx).padStart(3,"0")}.mp3`;
+  player.onended0 = null;
+  highlight(idx);
+  player.playbackRate=+speed.value;
+  player.play().catch(e=>console.error(e));
+  player.onended=()=>{
+    if(!playing) return;
+    if(mode==="one"){ if(repeatOne){ setTimeout(()=>playing&&playSegFallback(idx),400); } else stop(); return; }
+    const next=idx+1;
+    if(next>=curLines().length){ stop(); return; }
+    setTimeout(()=>playing&&playSegFallback(next),250);
+  };
+}
+
+function playAll(){
+  if(!dlg) return;
+  mode="all"; playing=true; paused=false; setPlayUI(true);
+  if(timings){ highlight(0); seekPlay(0); }
+  else playSegFallback(0);
+}
+function playOne(idx){
+  if(!dlg) return;
+  mode="one"; oneIdx=idx; playing=true; paused=false; setPlayUI(true);
+  if(timings){ highlight(idx); seekPlay(timings[idx].s); }
+  else playSegFallback(idx);
+}
 function stop(){
   playing=false; paused=false;
-  player.pause(); player.removeAttribute("src");
+  player.pause();
+  if(timings && dlg){ /* src 유지 — 다음 재생 즉시 시작 */ }
   setPlayUI(false); highlight(null);
 }
 function setPlayUI(on){

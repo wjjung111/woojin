@@ -30,7 +30,7 @@ jobs:
           python-version: '3.11'
 
       - name: edge-tts 설치
-        run: pip install edge-tts
+        run: pip install edge-tts mutagen
 
       - name: 음성 생성
         run: python listen/generate.py
