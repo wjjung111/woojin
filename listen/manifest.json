@@ -1,0 +1,20 @@
+[
+ {
+  "id": "make_all",
+  "order": 1,
+  "title": "make 종합 — 친구 수다 (DAY 22~24 표현 전부)",
+  "lines": 21
+ },
+ {
+  "id": "make1_cook",
+  "order": 2,
+  "title": "DAY 22 · make ① 해주다 — 요리해 줄게",
+  "lines": 12
+ },
+ {
+  "id": "make3_forced",
+  "order": 3,
+  "title": "DAY 24 · make ③ 시키다 — 억지로 하게 하다",
+  "lines": 12
+ }
+]
