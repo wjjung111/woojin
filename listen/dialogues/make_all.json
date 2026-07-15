@@ -2,7 +2,7 @@
  "id": "make_all",
  "order": 1,
  "title": "make 종합 — 친구 수다 (DAY 22~24 표현 전부)",
- "voices": { "F": "en-US-AriaNeural", "M": "en-US-GuyNeural" },
+ "voices": { "F": "en-US-AvaMultilingualNeural", "M": "en-US-AndrewMultilingualNeural" },
  "lines": [
   { "s": "F", "en": "Hey Jake! Long time no see. How's work going?", "ko": "제이크! 오랜만이야. 회사는 어때?" },
   { "s": "M", "en": "Oh, it's rough. My boss makes me upload new video content every single week.", "ko": "아, 힘들어. 상사가 매주 새 영상 올리라고 시켜." },

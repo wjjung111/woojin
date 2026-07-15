@@ -2,7 +2,7 @@
  "id": "make1_cook",
  "order": 2,
  "title": "DAY 22 · make ① 해주다 — 요리해 줄게",
- "voices": { "F": "en-US-JennyNeural", "M": "en-US-GuyNeural" },
+ "voices": { "F": "en-US-EmmaMultilingualNeural", "M": "en-US-AndrewMultilingualNeural" },
  "lines": [
   { "s": "F", "en": "Something smells amazing. Are you cooking?", "ko": "냄새 진짜 좋다. 요리하는 거야?" },
   { "s": "M", "en": "Yeah, I'm making you dinner. Sit down.", "ko": "응, 너 저녁 만들어 주는 중이야. 앉아." },
