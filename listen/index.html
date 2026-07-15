@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#4f46e5">
+<title>영어 대화 듣기</title>
+<style>
+  :root{ --bg:#0f172a; --card:#1e293b; --card2:#273449; --line:#334155;
+         --txt:#e2e8f0; --sub:#94a3b8; --accent:#6366f1; --accent2:#22c55e; --hi:#fbbf24; }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body{ margin:0; font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+        background:var(--bg); color:var(--txt); line-height:1.5; }
+  header{ padding:16px 16px 10px; position:sticky; top:0; background:linear-gradient(180deg,#0f172a,#0f172aee);
+          backdrop-filter:blur(6px); z-index:5; border-bottom:1px solid var(--line); }
+  h1{ font-size:19px; margin:0; }
+  header .src{ font-size:12px; color:var(--sub); margin-top:3px; }
+  .wrap{ max-width:640px; margin:0 auto; padding:0 14px 120px; }
+  .card{ background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px; margin-top:14px; }
+  label{ font-size:13px; color:var(--sub); display:block; margin-bottom:6px; }
+  select, input[type=range]{ width:100%; }
+  select{ background:var(--card2); color:var(--txt); border:1px solid var(--line); border-radius:10px;
+          padding:11px 12px; font-size:15px; appearance:none; }
+  .row{ display:flex; gap:10px; }
+  .row > div{ flex:1; }
+  .seg{ display:flex; gap:8px; margin-top:2px; }
+  .seg button{ flex:1; background:var(--card2); color:var(--txt); border:1px solid var(--line);
+               border-radius:10px; padding:10px 0; font-size:14px; font-weight:600; }
+  .seg button.on{ background:var(--accent); border-color:var(--accent); color:#fff; }
+  .speedval{ font-weight:700; color:var(--hi); }
+  .togglebtn{ background:var(--card2); border:1px solid var(--line); color:var(--txt); border-radius:10px;
+              padding:9px 12px; font-size:14px; font-weight:600; }
+  .togglebtn.on{ background:var(--accent2); border-color:var(--accent2); color:#04240f; }
+
+  #script .ln{ padding:11px 12px; border-radius:12px; margin:8px 0; background:var(--card);
+               border:1px solid var(--line); cursor:pointer; transition:.15s; }
+  #script .ln.F{ border-left:4px solid #ec4899; }
+  #script .ln.M{ border-left:4px solid #38bdf8; }
+  #script .ln.active{ background:#3b3416; border-color:var(--hi); }
+  .who{ font-size:11px; font-weight:700; letter-spacing:.5px; }
+  .ln.F .who{ color:#f472b6; } .ln.M .who{ color:#7dd3fc; }
+  .en{ font-size:16px; margin-top:3px; }
+  .ko{ font-size:13px; color:var(--sub); margin-top:4px; }
+  .ko.hide{ display:none; }
+  .tap{ font-size:11px; color:var(--sub); float:right; }
+
+  .bar{ position:fixed; left:0; right:0; bottom:0; background:#111827f2; backdrop-filter:blur(8px);
+        border-top:1px solid var(--line); padding:12px 14px calc(12px + env(safe-area-inset-bottom));
+        display:flex; gap:10px; justify-content:center; z-index:10; }
+  .bar .wrap2{ max-width:640px; width:100%; display:flex; gap:10px; }
+  .play{ flex:2; background:var(--accent2); color:#04240f; border:none; border-radius:12px;
+         font-size:17px; font-weight:800; padding:15px 0; }
+  .play.playing{ background:var(--hi); }
+  .stop{ flex:1; background:var(--card2); color:var(--txt); border:1px solid var(--line); border-radius:12px;
+         font-size:15px; font-weight:700; }
+  .tip{ font-size:12px; color:var(--sub); margin-top:14px; line-height:1.7; }
+  .tip b{ color:var(--txt); }
+  .warn{ background:#3f2d0b; border:1px solid #a16207; color:#fde68a; font-size:13px; padding:10px 12px;
+         border-radius:10px; margin-top:12px; display:none; }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap" style="padding-bottom:0">
+    <h1>🎧 영어 대화 듣기</h1>
+    <div class="src">폰에 내장된 음성으로 원어민 남·여 대화를 읽어줍니다 · 무료</div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="card">
+    <label>주제 고르기</label>
+    <select id="topic"></select>
+
+    <div style="height:14px"></div>
+    <label>대화 길이</label>
+    <div class="seg" id="lenSeg">
+      <button data-len="short">짧게</button>
+      <button data-len="medium" class="on">보통</button>
+      <button data-len="full">전체</button>
+    </div>
+
+    <div style="height:14px"></div>
+    <div class="row">
+      <div>
+        <label>👩 여자 목소리</label>
+        <select id="voiceF"></select>
+      </div>
+      <div>
+        <label>👨 남자 목소리</label>
+        <select id="voiceM"></select>
+      </div>
+    </div>
+
+    <div style="height:14px"></div>
+    <label>말 속도 : <span class="speedval" id="spdLabel">0.85배</span> <span style="color:var(--sub)">(느리게 ↔ 빠르게)</span></label>
+    <input type="range" id="speed" min="0.5" max="1.2" step="0.05" value="0.85">
+
+    <div style="height:14px"></div>
+    <button class="togglebtn on" id="transBtn">한글 번역 보기 : 켬</button>
+  </div>
+
+  <div class="warn" id="voiceWarn"></div>
+
+  <div id="script"></div>
+
+  <div class="tip">
+    💡 <b>더 자연스러운 목소리로 듣고 싶다면</b> (한 번만 설정):<br>
+    · <b>아이폰</b> : 설정 → 손쉬운 사용 → 콘텐츠 말하기 → 음성 → English → <b>고품질(Enhanced/Premium)</b> 음성 다운로드<br>
+    · <b>안드로이드</b> : 설정 → 시스템 → 언어 → 텍스트 음성 변환 → 구글 TTS → 음성 데이터 설치<br>
+    설정 후 이 페이지를 새로고침하면 목록에 더 좋은 목소리가 생깁니다.<br><br>
+    · 문장을 <b>탭</b>하면 그 문장만 다시 들을 수 있어요 (섀도잉 연습용).
+  </div>
+</div>
+
+<div class="bar">
+  <div class="wrap2">
+    <button class="play" id="playBtn">▶ 재생</button>
+    <button class="stop" id="stopBtn">■ 정지</button>
+  </div>
+</div>
+
+<script>
+/* ── 대화 데이터 (출처: 김재우 기본동사100 make 편) ───────────────── */
+const TOPICS = [
+  { id:"make_all", title:"make 종합 — 친구 수다 (make ①②③ 다 나옴)",
+    lines:[
+      ["F","Hey Jake! Long time no see. How's work going?","제이크! 오랜만이야. 회사는 어때?"],
+      ["M","Oh, it's rough. My boss makes me upload new video content every single week.","아, 힘들어. 상사가 매주 새 영상 올리라고 시켜."],
+      ["F","Ugh, that sounds exhausting. At least you're eating well, right? Last time you said you were learning to cook.","으, 지치겠다. 그래도 잘 챙겨 먹지? 저번에 요리 배운다며."],
+      ["M","Yeah, actually! I made myself go to a cooking class. I really didn't want to, but I'm glad I did.","응! 억지로 요리 수업 갔거든. 진짜 가기 싫었는데 가길 잘했어."],
+      ["F","Nice. So can you actually make anything now?","오, 그래서 이제 뭐 만들 줄 알아?"],
+      ["M","Honestly? I can make you steamed galbi. My mom used to make us that every Sunday.","솔직히? 갈비찜 해 줄 수 있어. 엄마가 일요일마다 해 주시곤 했거든."],
+      ["F","No way, that's my favorite. Okay, you've gotta make me some.","진짜? 그거 내 최애인데. 나 좀 해 줘야 해."],
+      ["M","Deal. So what about you? How's the new relationship going?","콜. 넌 어때? 새 연애는 잘돼 가?"],
+      ["F","It's going really well. He's so thoughtful. Look, he made me this bracelet from string.","완전 잘돼. 진짜 자상해. 봐, 끈으로 이 팔찌 만들어 줬어."],
+      ["M","Aw, that's cute. Wait, is he already making you wear matching outfits?","오, 귀엽다. 잠깐, 벌써 커플룩 입게 하는 거야?"],
+      ["F","He doesn't make me wear them. I want to.","입으라고 시키는 거 아냐. 내가 입고 싶은 거지."],
+      ["M","You guys have been dating for like a week. Isn't that a little fast?","만난 지 일주일밖에 안 됐잖아. 좀 빠르지 않아?"],
+      ["F","Depends on the couple, I guess. We like it. He's just really easy to be with, and that alone makes him a good fit for me.","커플마다 다르지 뭐. 우린 좋아. 같이 있기 편하고, 그거 하나만으로도 나한테 딱이야."],
+      ["M","That's what matters. You know, dating someone kind kind of makes you a better person.","그게 중요하지. 착한 사람 만나면 나도 더 좋은 사람이 되는 거 같아."],
+      ["F","Totally. Having him around has made me way more patient.","완전. 걔 덕분에 내가 훨씬 더 참을성 있어졌어."],
+      ["M","I get that. Anyway, I'm thinking of getting the new phone, the Pro model.","이해돼. 아무튼 나 새 폰 살까 해, 프로 모델."],
+      ["F","It's more expensive, though.","근데 더 비싸잖아."],
+      ["M","True, but the battery life makes it a better choice for me. I'm on my phone all day.","맞아, 근데 배터리 때문에 나한텐 더 나은 선택이야. 하루 종일 폰 하거든."],
+      ["F","Fair enough. Oh, before I forget, you promised to make me galbi.","하긴. 아 참, 나 갈비찜 해 주기로 한 거 잊지 마."],
+      ["M","I know, I know. Come over Saturday, and I'll make you something you won't forget.","알아 알아. 토요일에 와, 잊지 못할 거 만들어 줄게."],
+      ["F","Can't wait. See you then!","완전 기대돼. 그때 봐!"]
+    ]},
+  { id:"make_cook", title:"make ① 해주다 — 요리해 줄게",
+    lines:[
+      ["F","Something smells amazing. Are you cooking?","냄새 진짜 좋다. 요리하는 거야?"],
+      ["M","Yeah, I'm making you dinner. Sit down.","응, 너 저녁 만들어 주는 중이야. 앉아."],
+      ["F","Aw, you didn't have to. What are you making?","안 그래도 되는데. 뭐 만들어?"],
+      ["M","Steamed galbi. My mom used to make us this every Sunday.","갈비찜. 엄마가 일요일마다 우리한테 해 주시곤 했어."],
+      ["F","You're the best. Can you make me some tea too?","최고다. 나 차도 한 잔 타 줄 수 있어?"],
+      ["M","Of course. I can make you tea while the galbi cooks.","당연하지. 갈비찜 익는 동안 차 타 줄게."],
+      ["F","Honestly, a guy who can cook is so attractive.","솔직히 요리할 줄 아는 남자 진짜 매력 있어."],
+      ["M","Then let me make you something special next time.","그럼 다음엔 특별한 거 만들어 줄게."]
+    ]},
+  { id:"make_forced", title:"make ③ 시키다 — 억지로 하게 하다",
+    lines:[
+      ["F","You look exhausted. Rough day?","완전 피곤해 보여. 힘든 하루였어?"],
+      ["M","My boss makes me upload new content every single week. It never stops.","상사가 매주 새 영상 올리라고 시켜. 끝이 없어."],
+      ["F","Ugh. At least you go to the gym, right?","으. 그래도 헬스는 가지?"],
+      ["M","I made myself go this morning, but I really didn't want to.","오늘 아침 억지로 갔어, 근데 진짜 가기 싫었어."],
+      ["F","Same. My parents made me study so much as a kid.","나도. 어릴 때 부모님이 공부 엄청 시키셨거든."],
+      ["M","So now nobody can make you do anything?","그래서 이제 아무도 너한테 뭘 못 시키는 거야?"],
+      ["F","Exactly. Nobody can make me work on weekends anymore.","맞아. 이제 아무도 나 주말에 일 못 시켜."],
+      ["M","That's the dream.","그게 꿈이지."]
+    ]}
+];
+const LEN = { short:6, medium:12, full:999 };
+
+/* ── 요소 ── */
+const $ = id => document.getElementById(id);
+const topicSel=$("topic"), voiceFSel=$("voiceF"), voiceMSel=$("voiceM"),
+      speed=$("speed"), spdLabel=$("spdLabel"), scriptEl=$("script"),
+      playBtn=$("playBtn"), stopBtn=$("stopBtn"), transBtn=$("transBtn"),
+      voiceWarn=$("voiceWarn");
+let curLen="medium", showTrans=true, voices=[], playing=false, queue=[], qi=0, paused=false;
+
+/* ── 목소리 로드 ── */
+function loadVoices(){
+  const all = speechSynthesis.getVoices();
+  voices = all.filter(v=>/^en(-|_)/i.test(v.lang) || /english/i.test(v.name));
+  if(!voices.length) voices = all;               // 최후의 보루
+  const fill = (sel, preferIdx)=>{
+    sel.innerHTML="";
+    voices.forEach((v,i)=>{
+      const o=document.createElement("option");
+      o.value=i; o.textContent=`${v.name} (${v.lang})`;
+      sel.appendChild(o);
+    });
+    sel.value = Math.min(preferIdx, voices.length-1);
+  };
+  // 여자/남자 기본값: 이름으로 대충 추정, 없으면 서로 다른 두 개
+  const femaleHint=/(female|woman|samantha|karen|moira|tessa|victoria|zoe|joana|nicky|allison|ava|susan|serena|fiona|kate|jenny|aria)/i;
+  const maleHint  =/(male|man|daniel|aaron|fred|alex|arthur|oliver|rishi|tom|guy|eric|brian|reed|gordon|nathan)/i;
+  let fIdx=voices.findIndex(v=>femaleHint.test(v.name));
+  let mIdx=voices.findIndex(v=>maleHint.test(v.name));
+  if(fIdx<0) fIdx=0;
+  if(mIdx<0) mIdx=voices.length>1?1:0;
+  if(mIdx===fIdx && voices.length>1) mIdx=(fIdx+1)%voices.length;
+  fill(voiceFSel,fIdx); fill(voiceMSel,mIdx);
+
+  if(voices.length<=1){
+    voiceWarn.style.display="block";
+    voiceWarn.innerHTML="이 기기엔 영어 목소리가 <b>1개</b>뿐이라 두 사람 목소리가 비슷하게 들릴 수 있어요. (그래도 톤을 남/여로 살짝 다르게 읽어줍니다) 아래 💡 안내대로 고품질 음성을 추가하면 훨씬 좋아집니다.";
+  } else voiceWarn.style.display="none";
+}
+speechSynthesis.onvoiceschanged = loadVoices;
+loadVoices();
+setTimeout(loadVoices, 400);  // 일부 기기 지연 로드 대비
+
+/* ── 주제 채우기 ── */
+TOPICS.forEach((t,i)=>{ const o=document.createElement("option"); o.value=i; o.textContent=t.title; topicSel.appendChild(o); });
+
+/* ── 대본 렌더 ── */
+function curTopic(){ return TOPICS[+topicSel.value]; }
+function curLines(){ return curTopic().lines.slice(0, LEN[curLen]); }
+function render(){
+  const lines=curLines();
+  scriptEl.innerHTML="";
+  lines.forEach((ln,idx)=>{
+    const [spk,en,ko]=ln;
+    const d=document.createElement("div");
+    d.className="ln "+spk; d.dataset.i=idx;
+    d.innerHTML=`<span class="who">${spk==="F"?"👩 A":"👨 B"}</span><span class="tap">탭하면 이 문장만 ▶</span>
+      <div class="en">${en}</div><div class="ko${showTrans?"":" hide"}">${ko}</div>`;
+    d.onclick=()=>speakOne(idx);
+    scriptEl.appendChild(d);
+  });
+}
+topicSel.onchange=()=>{ stop(); render(); };
+$("lenSeg").querySelectorAll("button").forEach(b=>{
+  b.onclick=()=>{ $("lenSeg").querySelectorAll("button").forEach(x=>x.classList.remove("on"));
+    b.classList.add("on"); curLen=b.dataset.len; stop(); render(); };
+});
+transBtn.onclick=()=>{ showTrans=!showTrans; transBtn.textContent="한글 번역 보기 : "+(showTrans?"켬":"끔");
+  transBtn.classList.toggle("on",showTrans);
+  scriptEl.querySelectorAll(".ko").forEach(k=>k.classList.toggle("hide",!showTrans)); };
+speed.oninput=()=>{ spdLabel.textContent=(+speed.value).toFixed(2)+"배"; };
+
+/* ── 발화 만들기 ── */
+function makeUtter(spk,en){
+  const u=new SpeechSynthesisUtterance(en);
+  const v=voices[+(spk==="F"?voiceFSel.value:voiceMSel.value)];
+  if(v) u.voice=v;
+  u.rate=+speed.value;
+  u.pitch = spk==="F" ? 1.12 : 0.9;   // 같은 목소리여도 남/여 톤 구분
+  u.lang = v ? v.lang : "en-US";
+  return u;
+}
+function highlight(idx){
+  scriptEl.querySelectorAll(".ln").forEach(el=>el.classList.remove("active"));
+  const el=scriptEl.querySelector(`.ln[data-i="${idx}"]`);
+  if(el){ el.classList.add("active"); el.scrollIntoView({behavior:"smooth",block:"center"}); }
+}
+
+/* 한 문장만 재생 (탭) */
+function speakOne(idx){
+  speechSynthesis.cancel(); playing=false; setPlayUI(false);
+  const [spk,en]=curLines()[idx];
+  highlight(idx);
+  const u=makeUtter(spk,en);
+  u.onend=()=>{ scriptEl.querySelectorAll(".ln").forEach(el=>el.classList.remove("active")); };
+  speechSynthesis.speak(u);
+}
+
+/* 전체 재생 */
+function playAll(){
+  queue=curLines(); qi=0; playing=true; paused=false; setPlayUI(true);
+  next();
+}
+function next(){
+  if(!playing || qi>=queue.length){ stop(); return; }
+  const [spk,en]=queue[qi];
+  highlight(qi);
+  const u=makeUtter(spk,en);
+  u.onend=()=>{ if(playing){ qi++; setTimeout(next,180); } };  // 문장 사이 짧은 쉼
+  u.onerror=()=>{ if(playing){ qi++; setTimeout(next,180); } };
+  speechSynthesis.speak(u);
+}
+function setPlayUI(on){
+  playing=on;
+  playBtn.textContent = on ? "⏸ 일시정지" : "▶ 재생";
+  playBtn.classList.toggle("playing",on);
+}
+function stop(){
+  playing=false; paused=false; speechSynthesis.cancel();
+  setPlayUI(false);
+  scriptEl.querySelectorAll(".ln").forEach(el=>el.classList.remove("active"));
+}
+playBtn.onclick=()=>{
+  if(playing){                     // 재생 중 → 일시정지
+    speechSynthesis.pause(); paused=true; setPlayUI(false); playBtn.textContent="▶ 이어재생";
+  } else if(paused){               // 일시정지 상태 → 이어재생
+    speechSynthesis.resume(); paused=false; setPlayUI(true);
+  } else {                         // 처음부터
+    playAll();
+  }
+};
+stopBtn.onclick=stop;
+
+/* 첫 렌더 */
+render();
+/* 화면 벗어나면 정지(아이폰에서 겹침 방지) */
+document.addEventListener("visibilitychange",()=>{ if(document.hidden) stop(); });
+</script>
+</body>
+</html>
