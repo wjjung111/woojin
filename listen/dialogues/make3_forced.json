@@ -2,7 +2,7 @@
  "id": "make3_forced",
  "order": 3,
  "title": "DAY 24 · make ③ 시키다 — 억지로 하게 하다",
- "voices": { "F": "en-US-MichelleNeural", "M": "en-US-ChristopherNeural" },
+ "voices": { "F": "en-US-AvaMultilingualNeural", "M": "en-US-BrianMultilingualNeural" },
  "lines": [
   { "s": "F", "en": "Good morning! You look exhausted. Rough day already?", "ko": "좋은 아침! 완전 피곤해 보여. 벌써 힘든 거야?" },
   { "s": "M", "en": "My boss makes me upload new online video content every week. It never stops.", "ko": "상사가 매주 새 온라인 영상 올리라고 시켜. 끝이 없어." },
