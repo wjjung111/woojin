@@ -1,0 +1,59 @@
+{
+ "id": "have",
+ "verb": "have",
+ "order": 1,
+ "title": "have · 있다·먹다·겪다·열다 (DAY 1~4)",
+ "pages": 12,
+ "voices": { "F": "en-US-AvaMultilingualNeural", "M": "en-US-AndrewMultilingualNeural" },
+ "lines": [
+  { "s": "F", "en": "Hey! I haven't seen you around lately.", "ko": "안녕! 요즘 통 안 보이더라." },
+  { "s": "M", "en": "I know. I had a rough week, emotionally.", "ko": "그러게. 한 주 동안 마음이 좀 힘들었거든." },
+  { "s": "F", "en": "Aw, do you want to talk about it?", "ko": "저런, 무슨 일인지 얘기해 줄래?" },
+  { "s": "M", "en": "Maybe later. My mom and I had a falling-out over my major.", "ko": "다음에. 전공 때문에 엄마랑 사이가 틀어졌거든." },
+  { "s": "F", "en": "That's tough. Are you at least eating okay?", "ko": "힘들겠다. 그래도 밥은 잘 챙겨 먹고 있어?" },
+  { "s": "M", "en": "Barely. I just had a snack, so I'm not that hungry.", "ko": "거의 못 해. 방금 간식 먹어서 별로 안 고파." },
+  { "s": "F", "en": "Come on, let's have some pizza and watch a movie.", "ko": "에이, 피자 먹으면서 영화나 보자." },
+  { "s": "M", "en": "Actually, I could go for some Korean food instead.", "ko": "사실 그것보다 한국 음식이 당기는데." },
+  { "s": "F", "en": "Perfect. By the way, do you have any pets now?", "ko": "좋아. 그나저나 너 요즘 반려동물 키워?" },
+  { "s": "M", "en": "My nephew has a turtle, and I'm watching it this month.", "ko": "조카가 거북이를 키우는데, 이번 달엔 내가 돌보고 있어." },
+  { "s": "F", "en": "Cute! Oh, I'm having a housewarming party this weekend.", "ko": "귀엽다! 아 참, 나 이번 주말에 집들이해." },
+  { "s": "M", "en": "Nice! You should invite everyone.", "ko": "좋네! 다 초대해." },
+  { "s": "F", "en": "I will. We always have such good conversations, so it'll be fun.", "ko": "그럴 거야. 우린 만나면 늘 대화가 즐거우니까 재밌을 거야." },
+  { "s": "M", "en": "For sure. I have some friends living downtown I could bring.", "ko": "당연하지. 시내에 사는 친구들도 몇 명 데려올 수 있어." },
+  { "s": "F", "en": "The more the merrier. I heard your company always has great parties too.", "ko": "많을수록 좋지. 너희 회사도 늘 파티 잘한다며." },
+  { "s": "M", "en": "Ha, they do. We're having a get-together next month if you want to join.", "ko": "하, 맞아. 다음 달에 모임 있는데 오고 싶으면 와." },
+  { "s": "F", "en": "I'm in. Honestly, I have mixed feelings about parties, but yours are worth it.", "ko": "갈래. 솔직히 파티는 시원섭섭한 감정이 있는데, 너희 건 갈 만해." },
+  { "s": "M", "en": "We had a great time last year, remember?", "ko": "작년에 진짜 좋은 시간 보냈잖아, 기억나?" },
+  { "s": "F", "en": "Totally. Best night of the summer.", "ko": "완전. 그 여름 최고의 밤이었지." }
+ ],
+ "reading": [
+  { "day": "DAY 1", "sub": "HAVE ① 있다·소유하다", "note": "have는 기본적으로 '~을 가지고 있다, ~이 있다'라는 뜻. '반려동물 키우다'를 raise로 옮기기 쉽지만 원어민은 Do you have any pets?처럼 have를 쓴다.",
+    "ex": [
+      ["My nephew has a turtle.", "내 조카는 거북이를 키운다."],
+      ["I have some friends living in Chicago.", "나는 시카고에 사는 친구들이 있다."],
+      ["My brother and I have a strong bond.", "남동생과 나는 우애가 돈독하다."],
+      ["Honestly, I have mixed feelings.", "솔직히 시원섭섭해요."]
+    ]},
+  { "day": "DAY 2", "sub": "HAVE ② 먹다·마시다", "note": "eat은 '먹는 행위'에 초점, have는 보통 음식 이름과 함께 쓰여 먹은 '내용'에 초점. I had a salad for lunch.처럼 have a salad가 하나의 덩어리로 쓰인다.",
+    "ex": [
+      ["I usually have cereal for breakfast.", "나는 아침으로 주로 시리얼을 먹는다."],
+      ["I'll have the steak, please.", "저는 스테이크로 할게요."],
+      ["I just had a snack, so I'm not that hungry.", "방금 간식을 먹어서 별로 안 고파요."],
+      ["Let's have some pizza and watch a movie.", "피자 먹으면서 영화 보자."]
+    ]},
+  { "day": "DAY 3", "sub": "HAVE ③ 겪다·경험하다", "note": "have에는 '~을 겪다, 경험하다'의 뜻이 있다. I have a cold.(감기 걸렸어), We had a terrible breakup.(안 좋게 헤어졌어)처럼.",
+    "ex": [
+      ["We had a great time in Japan last week.", "우리는 지난주 일본에서 정말 좋은 시간을 보냈어요."],
+      ["I had a rough childhood.", "나는 힘든 유년 시절을 보냈다."],
+      ["My mom and I had a falling-out over my major.", "전공 때문에 엄마랑 사이가 틀어졌어."],
+      ["I had a rough week, emotionally.", "한 주 동안 마음이 좀 힘들었어."]
+    ]},
+  { "day": "DAY 4", "sub": "HAVE ④ (행사를) 열다·개최하다", "note": "행사·이벤트를 '열다'는 구어체에서 주로 have. hold도 되지만 격식·문어체 느낌. 회화·광고·안내문에선 대부분 have.",
+    "ex": [
+      ["I'm having a housewarming party this weekend.", "이번 주말에 집들이를 합니다."],
+      ["The department stores are all having sales this week.", "백화점들이 이번 주에 일제히 세일을 한다."],
+      ["We're having a get-together this weekend if you want to join.", "이번 주말에 모임이 있으니 오고 싶으면 오렴."],
+      ["I heard your company always has great Christmas parties.", "너희 회사는 늘 멋진 크리스마스 파티를 한다고 들었어."]
+    ]}
+ ]
+}

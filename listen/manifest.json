@@ -1,20 +1,18 @@
 [
  {
-  "id": "make_all",
+  "id": "have",
+  "verb": "have",
   "order": 1,
-  "title": "make 종합 — 친구 수다 (DAY 22~24 표현 전부)",
-  "lines": 21
+  "title": "have · 있다·먹다·겪다·열다 (DAY 1~4)",
+  "lines": 19,
+  "pages": 12
  },
  {
-  "id": "make1_cook",
+  "id": "make",
+  "verb": "make",
   "order": 2,
-  "title": "DAY 22 · make ① 해주다 — 요리해 줄게",
-  "lines": 12
- },
- {
-  "id": "make3_forced",
-  "order": 3,
-  "title": "DAY 24 · make ③ 시키다 — 억지로 하게 하다",
-  "lines": 12
+  "title": "make · 해주다·되게하다·시키다 (DAY 22~24)",
+  "lines": 21,
+  "pages": 0
  }
 ]
