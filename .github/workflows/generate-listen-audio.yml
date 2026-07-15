@@ -29,8 +29,10 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: edge-tts 설치
-        run: pip install edge-tts mutagen
+      - name: edge-tts·ffmpeg 설치
+        run: |
+          pip install edge-tts mutagen
+          sudo apt-get update -q && sudo apt-get install -y -q --no-install-recommends ffmpeg
 
       - name: 음성 생성
         run: python listen/generate.py

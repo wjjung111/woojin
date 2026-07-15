@@ -60,7 +60,8 @@ async def build_dialogue(dlg_file, sil_bytes, sil_dur):
     outdir = AUD_DIR / did
     outdir.mkdir(parents=True, exist_ok=True)
 
-    content_hash = hashlib.sha256(dlg_file.read_bytes() + f"gap={GAP_SECONDS}".encode()).hexdigest()
+    # v2: ffmpeg 무음 삽입 성공본부터 유효 — 버전 올리면 전 챕터 강제 재생성
+    content_hash = hashlib.sha256(dlg_file.read_bytes() + f"gap={GAP_SECONDS};v2".encode()).hexdigest()
     stamp = outdir / ".stamp"
     complete = (all((outdir / f"{i:03d}.mp3").exists() for i in range(len(lines)))
                 and (outdir / "full.mp3").exists() and (outdir / "timings.json").exists())
