@@ -1,5 +1,5 @@
-﻿# ARAP 실행 + 부동산원(R-ONE) 매매가격지수 자동 수신
-# - 'ARAP 실행.bat'이 이 파일을 호출한다. 직접 실행해도 된다.
+﻿# EXACT(구 ARAP) 실행 + 부동산원(R-ONE) 매매가격지수 자동 수신
+# - 'EXACT 실행.bat'이 이 파일을 호출한다. 직접 실행해도 된다.
 # - 지수 데이터(arap_index_data.js)가 없으면: 먼저 받고 앱을 연다.
 # - 있으면: 앱을 먼저 열고, 하루 이상 지난 경우 백그라운드로 새로 받는다.
 param([switch]$FetchOnly)
@@ -9,7 +9,7 @@ $ErrorActionPreference = "Stop"
 
 $root     = Split-Path -Parent $MyInvocation.MyCommand.Path
 $dataFile = Join-Path $root "arap_index_data.js"
-$htmlFile = Join-Path $root "arap_집합건물v1.2.html"
+$htmlFile = Join-Path $root "exact_집합건물v1.0.html"
 # API 키는 저장소(공개)에 올리지 않는다 — 환경변수 RONE_API_KEY 또는 로컬파일 arap_apikey.local.txt에서 읽음.
 # 두 곳 다 없으면 지수 수신만 생략, 앱은 기존 데이터로 정상 작동.
 $apiKey = $env:RONE_API_KEY

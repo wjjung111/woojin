@@ -1,10 +1,12 @@
-# ARAP — 감정평가 의견서 자동화 도구
+# EXACT — 감정평가 의견서 자동화 도구
+
+**EXACT** = **EX**pert **A**ppraisal **C**ompanion **T**ool (구 명칭: ARAP)
 
 집합건물 감정평가 의견서 작성의 단순작업(시점수정 계산, 요인비교표, 표준문구, DOCX 생성)을
 자동화하는 개인 제작 도구입니다.
 
 - 실행(웹): https://wjjung111.github.io/woojin/
-- 실행(로컬): `ARAP 실행.bat`
+- 실행(로컬): `EXACT 실행.bat`
 
 ## ⚠️ 저작권 안내 / Copyright Notice
 
