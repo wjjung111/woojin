@@ -97,6 +97,7 @@
 | `DEFAULT_TPL` (770행, 72KB 한 줄) | base64로 docx 통째 임베드 — 라인 길이 73KB | 절대 들여쓰기 도구 돌리지 말 것. 통째 한 줄 유지. |
 | 명세표 xlsx `calcChain.xml` | 셀 덮어쓴 뒤 계산체인이 남으면 엑셀이 '복구' 경고. Word보다 엄격 | `downloadMyeongseXlsx`에서 calcChain.xml+Content_Types override+rel을 **항상 제거**(엑셀이 재생성). deltaMS 조건에 걸지 말 것 |
 | 명세표 구조/층별면적 | 반드시 **등기** 표제부(1동의 건물의 표시) 기준. 건축물대장 아님 | 구조=`ov.regStructure`(등기), 층별면적=`ov.floorDetail`(등기). PDF프롬프트도 등기 전용 명시됨 |
+| 명세표 층별면적 행수 | 예전엔 6줄 고정(초과분 잘림) | 층 6줄 초과 시 `floorOff`만큼 19행에 층서식(F s51/G s55) 빈행 삽입 → 그 아래 전체가 밀림. 필지 행삽입(`deltaMS`)과 오프셋 합산(도형앵커·`SUM`범위·dimension·인쇄영역 모두 `floorOff+deltaMS` 반영). 층행 삽입 시 `insertSheetRows`에 층전용 blankFn 전달 |
 
 ## 6. 테스트 방법 (DOCX 다운로드 변경 시)
 
