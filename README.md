@@ -8,7 +8,7 @@
 
 ## ⚠️ 저작권 안내 / Copyright Notice
 
-**Copyright (c) 2026 wjjung111. All Rights Reserved. (모든 권리 보유)**
+**Copyright (c) 2026 정우진 감정평가사 (Woojin Jung, Certified Appraiser). All Rights Reserved. (모든 권리 보유)**
 
 본 저장소는 열람 및 앱 실행 목적으로만 공개되어 있습니다.
 **저작권자의 사전 서면 동의 없는 소스코드의 복제·수정·상업적 이용·재배포·2차적 저작물 작성을 금지합니다.**
