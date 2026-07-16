@@ -1,0 +1,36 @@
+ARAP — 감정평가 의견서 자동화 도구
+Copyright (c) 2026 wjjung111 (wjjung9334@gmail.com). All Rights Reserved. (모든 권리 보유)
+
+[한국어]
+
+본 저장소의 모든 소스코드, 문서, 템플릿(HTML에 내장된 DOCX/XLSX 템플릿 포함)은
+저작권자의 개인 저작물이며, 대한민국 저작권법 및 국제 저작권 협약에 따라 보호됩니다.
+
+본 저장소가 공개(Public)되어 있는 것은 열람과 앱 실행(GitHub Pages)을 위한 것일 뿐이며,
+아래 행위에 대한 허락을 의미하지 않습니다. 저작권자의 사전 서면 동의 없이 다음 행위를 금지합니다.
+
+1. 소스코드 전부 또는 일부의 복제, 수정, 2차적 저작물 작성
+2. 상업적 이용 (법인·사무소 내부 업무용 개조 및 배포 포함)
+3. 재배포, 재호스팅, 판매, 임대
+4. 내장된 의견서·명세표 템플릿의 추출 및 재사용
+
+위반 시 저작권법에 따른 민·형사상 책임을 물을 수 있습니다.
+이용 허락 문의: wjjung9334@gmail.com
+
+[English]
+
+All source code, documents, and templates in this repository (including DOCX/XLSX
+templates embedded in the HTML) are the personal work of the copyright holder and
+are protected under the Copyright Act of the Republic of Korea and international
+copyright treaties.
+
+This repository is public solely for viewing and running the app via GitHub Pages.
+This does NOT grant permission to:
+
+1. Copy, modify, or create derivative works from any part of the source code
+2. Use commercially (including internal adaptation/deployment within a firm)
+3. Redistribute, re-host, sell, or lease
+4. Extract or reuse the embedded document templates
+
+Unauthorized use may result in civil and criminal liability.
+For licensing inquiries: wjjung9334@gmail.com
