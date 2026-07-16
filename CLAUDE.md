@@ -1,4 +1,10 @@
-# CLAUDE.md — ARAP 프로젝트 지침서
+# CLAUDE.md — EXACT 프로젝트 지침서 (구 ARAP)
+
+> **(2026-07-16) 앱 이름 변경: ARAP → EXACT** (EXpert Appraisal Companion Tool). **v1.0부터 새 출발.**
+> - 운영본: `exact_집합건물v1.0.html` (내용 = 구 arap_집합건물v1.2 + 저작권 표시)
+> - 로컬 진입점: `EXACT 실행.bat` (구 `ARAP 실행.bat`)
+> - `arap_집합건물v1.2.html`은 구주소 호환용 안내판(새 파일로 자동 이동)으로만 남음
+> - **주의: 내부 식별자는 그대로 arap** — localStorage 키(`arap-*`, `arap_kapa/kais_history`), `arap_index_data.js`, `arap_launch.ps1`, `window.ARAP_INDEX_DATA`, `ArapSync` 등은 **절대 개명 금지** (기존 사용자 저장 데이터·지수 수신 연결이 끊어짐). 문서 내 ARAP 표기는 문맥상 EXACT로 읽을 것.
 
 > Claude Code가 이 폴더에서 작업할 때 **자동으로 먼저 읽는 파일**.
 > 모든 작업은 이 문서의 원칙을 따른 뒤에 시작한다.
@@ -112,15 +118,16 @@
 
 ## 7. 폴더 구조 / 주요 파일
 
-> **루트에는 앱 실행 필수 4종만** 둔다. `ARAP 실행.bat`→`arap_launch.ps1`→`arap_집합건물v1.2.html`+`arap_index_data.js`가
+> **루트에는 앱 실행 필수 파일만** 둔다. `EXACT 실행.bat`→`arap_launch.ps1`→`exact_집합건물v1.0.html`+`arap_index_data.js`가
 > **같은 폴더(루트)에 붙어있어야** 실행됨(html이 `arap_index_data.js`를 상대경로로 로드). 이 4개는 **하위폴더로 옮기지 말 것.**
 > 템플릿 .docx는 html에 base64 내장이라 런타임에 안 불러옴 → `템플릿/`으로 옮겨도 앱 정상.
 
 ```
 woojin/ (저장소 루트, GitHub: wjjung111/woojin)
-├── arap_집합건물v1.2.html              ← ★현재 운영본 (직접수정 금지 → v1-3로 사본). 루트 고정
-├── index.html                         ← GitHub Pages 진입점(→ v1.2.html 리다이렉트). 깔끔한 URL용. 루트 고정
-├── ARAP 실행.bat                       ← ★로컬 진입점: 지수 자동수신(arap_launch.ps1) 후 v1.2 열기. 루트 고정
+├── exact_집합건물v1.0.html             ← ★현재 운영본 (직접수정 금지 → v1-1로 사본). 루트 고정
+├── arap_집합건물v1.2.html              ← 구주소 호환용 안내판(→ exact v1.0 자동이동). 루트 고정
+├── index.html                         ← GitHub Pages 진입점(→ exact v1.0 리다이렉트). 깔끔한 URL용. 루트 고정
+├── EXACT 실행.bat                      ← ★로컬 진입점: 지수 자동수신(arap_launch.ps1) 후 exact v1.0 열기. 루트 고정
 ├── arap_launch.ps1                    ← 부동산원 R-ONE API에서 지수 수신 → arap_index_data.js 생성. 루트 고정
 │                                        (API키는 코드 미포함 — 환경변수 RONE_API_KEY 또는 arap_apikey.local.txt에서 읽음)
 ├── arap_index_data.js                 ← 매매가격지수 데이터 (자동생성 — 직접수정 금지). 루트 고정
@@ -148,7 +155,7 @@ woojin/ (저장소 루트, GitHub: wjjung111/woojin)
 - main에 머지된 내용만 반영됨 (코드 고치면 main 머지 후에야 URL에 반영)
 - **지수 자동계산**: 저장소에 커밋된 `arap_index_data.js`를 그대로 사용 → 아래 ③ Actions가 매일 갱신하므로 최신 유지됨
 
-**② 로컬에서 `ARAP 실행.bat` 더블클릭** — 기존 방식, 오프라인·즉시 지수수신용
+**② 로컬에서 `EXACT 실행.bat` 더블클릭** — 기존 방식, 오프라인·즉시 지수수신용
 - 이 방식으로 지수를 받으려면 PC에 `arap_apikey.local.txt`(R-ONE 키 한 줄) 필요
 
 **API 키 관리 (공개 저장소라 코드에 절대 안 넣음)**
@@ -164,7 +171,7 @@ woojin/ (저장소 루트, GitHub: wjjung111/woojin)
 
 ## 8. 자주 하는 실수 (방지 체크리스트)
 
-- [ ] 운영본(현재 v1.2)에 직접 수정했는가? → **STOP, v1-3로 복제부터**
+- [ ] 운영본(현재 exact v1.0)에 직접 수정했는가? → **STOP, v1-1로 복제부터**
 - [ ] 백업 만들었는가? → **STOP, 백업부터**
 - [ ] localStorage `TPL_KEY` 안 올리고 임베드 템플릿만 바꿨는가? → 사용자는 새 템플릿 못 봄
 - [ ] 정규식에 `[\s\S]*?` 썼는데 경계 가드 빠졌는가? → 5페이지 사고 재현
@@ -179,4 +186,4 @@ woojin/ (저장소 루트, GitHub: wjjung111/woojin)
 
 ---
 
-**마지막 수정**: 2026-07-13 (GitHub 이전 = Pages URL 실행 + Actions 지수 자동갱신 + API키 코드 분리. §7-1 참고)
+**마지막 수정**: 2026-07-16 (앱 이름 ARAP → EXACT v1.0 변경 + 저작권 표시/LICENSE 추가. 상단 개명 노트 참고)
