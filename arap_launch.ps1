@@ -64,7 +64,7 @@ function Get-CapType($nm) {
   return $null
 }
 function ConvertTo-QKey($w) {
-  $s = [string]$w
+  $s = ([string]$w) -replace '[^0-9A-Za-z]',''            # 2026.2 / 2026-Q2 → 20262 / 2026Q2
   if ($s -match '^(\d{4})[Qq]?0?([1-4])$')      { return "$($matches[1])$($matches[2])" }   # 20261 / 2026Q1 / 2026Q01
   if ($s -match '^(\d{4})(0[1-9]|1[0-2])$')      { $mm=[int]$matches[2]; $q=[math]::Ceiling($mm/3.0); return "$($matches[1])$q" }  # 202603(분기말월)→20261
   return $null
@@ -80,32 +80,52 @@ function Fetch-CapReturn {
   $cands = @($all | Where-Object { $_.STATBL_NM -match "자본수익률" })
   Write-Host ("  '자본수익률' 통계표 후보 {0}건" -f $cands.Count)
   foreach ($c in $cands) { Write-Host ("    [{0}] {1} ({2})" -f $c.STATBL_ID, $c.STATBL_NM, $c.DTACYCLE_NM) }
-  $types = [ordered]@{}
+  # 후보 표는 연도구간별로 쪼개져 있음(2022~, 2021, 2020, …) → 유형별로 모든 기간표를 병합해 전체 이력 확보.
+  # 주기는 반드시 QY(분기)로 조회한다(목록의 DTACYCLE_CD는 '매년,분기' 복합값이라 그대로 쓰면 조회가 비어 SttsApiTblData=null).
+  $byType = [ordered]@{}
   foreach ($c in $cands) {
     $kind = Get-CapType $c.STATBL_NM
-    if (-not $kind -or $types.Contains($kind)) { continue }   # 유형별 첫 표만
-    $cyc = if ($c.DTACYCLE_CD) { [string]$c.DTACYCLE_CD } else { "QY" }
-    try {
-      $durl = "{0}?STATBL_ID={1}&DTACYCLE_CD={2}&Type=json&pIndex=1&pSize=1000&KEY={3}" -f $apiBase, $c.STATBL_ID, $cyc, $apiKey
-      $dj = Invoke-Rone $durl
-      $rows = $dj.SttsApiTblData[1].row
-    } catch { Write-Host ("    {0} 데이터 실패: {1}" -f $kind, $_) -ForegroundColor Yellow; continue }
-    if (-not $rows) { Write-Host ("    {0} 자료없음" -f $kind); continue }
+    if (-not $kind) { continue }
+    if (-not $byType.Contains($kind)) { $byType[$kind] = New-Object System.Collections.ArrayList }
+    [void]$byType[$kind].Add([string]$c.STATBL_ID)
+  }
+  $types = [ordered]@{}
+  $diagShown = $false
+  foreach ($kind in $byType.Keys) {
     $regions = [ordered]@{}
     $latest = ""
-    foreach ($r in $rows) {
-      if ($r.ITM_NM -and ($r.ITM_NM -notmatch "자본수익률")) { continue }   # 한 표에 여러 항목이 섞인 경우 자본수익률만
-      $q = ConvertTo-QKey $r.WRTTIME_IDTFR_ID
-      if (-not $q) { continue }
-      $reg = if ($r.CLS_NM) { [string]$r.CLS_NM } elseif ($r.CLS_FULLNM) { ([string]$r.CLS_FULLNM -split ">")[-1] } else { "전국" }
-      $reg = $reg.Trim()
-      if (-not $regions.Contains($reg)) { $regions[$reg] = [ordered]@{} }
-      $regions[$reg][$q] = [math]::Round([double]$r.DTA_VAL, 2)   # 공표 자본수익률(%)은 소수 2자리
-      if ($q -gt $latest) { $latest = $q }
+    foreach ($sid in $byType[$kind]) {
+      try {
+        $durl = "{0}?STATBL_ID={1}&DTACYCLE_CD=QY&Type=json&pIndex=1&pSize=1000&KEY={2}" -f $apiBase, $sid, $apiKey
+        $dj = Invoke-Rone $durl
+      } catch { Write-Host ("    {0} {1} 호출실패: {2}" -f $kind, $sid, $_) -ForegroundColor Yellow; continue }
+      $rows = if ($dj.SttsApiTblData -and @($dj.SttsApiTblData).Count -ge 2) { $dj.SttsApiTblData[1].row } else { $null }
+      if (-not $diagShown) {
+        $diagShown = $true
+        if ($rows -and @($rows).Count -ge 1) {
+          $r0 = @($rows)[0]
+          Write-Host ("    [진단] {0} 첫행: WRTTIME={1} CLS_NM={2} CLS_FULLNM={3} ITM_NM={4} DTA_VAL={5}" -f $sid, $r0.WRTTIME_IDTFR_ID, $r0.CLS_NM, $r0.CLS_FULLNM, $r0.ITM_NM, $r0.DTA_VAL) -ForegroundColor Cyan
+        } else {
+          $raw = ($dj | ConvertTo-Json -Depth 4 -Compress); if (-not $raw) { $raw = "(null)" }
+          Write-Host ("    [진단] {0} 응답(앞400자): {1}" -f $sid, $raw.Substring(0, [math]::Min(400, $raw.Length))) -ForegroundColor Yellow
+        }
+      }
+      if (-not $rows) { continue }
+      foreach ($r in $rows) {
+        if ($r.ITM_NM -and ($r.ITM_NM -notmatch "자본수익률")) { continue }   # 한 표에 여러 항목이 섞인 경우 자본수익률만
+        $q = ConvertTo-QKey $r.WRTTIME_IDTFR_ID
+        if (-not $q) { continue }
+        $reg = if ($r.CLS_NM) { [string]$r.CLS_NM } elseif ($r.CLS_FULLNM) { ([string]$r.CLS_FULLNM -split ">")[-1] } else { "전국" }
+        $reg = $reg.Trim()
+        if (-not $regions.Contains($reg)) { $regions[$reg] = [ordered]@{} }
+        $regions[$reg][$q] = [math]::Round([double]$r.DTA_VAL, 2)   # 공표 자본수익률(%)은 소수 2자리
+        if ($q -gt $latest) { $latest = $q }
+      }
     }
-    if ($regions.Count -eq 0) { continue }
-    $types[$kind] = [ordered]@{ statblId = [string]$c.STATBL_ID; latest = $latest; regions = $regions }
-    Write-Host ("    {0}: 지역 {1}개, 최신 {2}분기" -f $kind, $regions.Count, $latest) -ForegroundColor Green
+    if ($regions.Count -eq 0) { Write-Host ("    {0} 자료없음" -f $kind) -ForegroundColor Yellow; continue }
+    $types[$kind] = [ordered]@{ latest = $latest; regions = $regions }
+    $sample = @($regions.Keys)[0]
+    Write-Host ("    {0}: 지역 {1}개, 최신 {2}분기 (예: {3} {4}개분기)" -f $kind, $regions.Count, $latest, $sample, $regions[$sample].Count) -ForegroundColor Green
   }
   if ($types.Count -eq 0) { Write-Host "  자본수익률 표를 찾지 못함 — 앱은 수동입력으로 동작"; return $null }
   return [ordered]@{
