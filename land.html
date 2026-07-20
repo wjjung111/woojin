@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>토지 조회 — EXACT</title>
+<style>
+  body{font-family:'Malgun Gothic','맑은 고딕',sans-serif;margin:24px;background:#f7f8fa;color:#222;font-size:14px}
+  h1{font-size:20px;margin:0 0 4px} h1 small{font-size:13px;color:#888;font-weight:normal}
+  .card{background:#fff;border:1px solid #e2e5ea;border-radius:8px;padding:14px 16px;margin:12px 0}
+  textarea{width:100%;box-sizing:border-box;font:inherit;padding:8px;border:1px solid #ccd;border-radius:6px;resize:vertical}
+  input[type=text],input[type=password]{font:inherit;padding:6px 8px;border:1px solid #ccd;border-radius:6px}
+  button{font:inherit;padding:7px 14px;border:1px solid #2b6cb0;background:#2b6cb0;color:#fff;border-radius:6px;cursor:pointer}
+  button.ghost{background:#fff;color:#2b6cb0}
+  button:disabled{opacity:.5;cursor:default}
+  #status{margin:8px 0;color:#555;min-height:18px}
+  #status.err{color:#c0392b}
+  table{border-collapse:collapse;width:100%;background:#fff;font-size:13px}
+  th,td{border:1px solid #cdd3dc;padding:5px 7px;text-align:center;white-space:nowrap}
+  th{background:#eef1f6}
+  td[contenteditable]{background:#fff}
+  td.manual{background:#fff8e1}
+  td.del{cursor:pointer;color:#c0392b;border:none;background:none}
+  .tablewrap{overflow-x:auto}
+  .hint{color:#888;font-size:12px}
+  #fallbackPanel{border:2px solid #e67e22;background:#fff7ef}
+  #fallbackPanel a{word-break:break-all}
+  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+</style>
+</head>
+<body>
+<h1>토지 조회 <small>지번 입력 → 토지특성·용도지역·공시지가 (브이월드 API)</small></h1>
+
+<div class="card" id="keyCard">
+  <div class="row">
+    <b>브이월드 인증키</b>
+    <input type="password" id="keyInput" size="42" placeholder="예: 8D5CB15B-....-....-....-............">
+    <button class="ghost" id="btnSaveKey">저장</button>
+    <span class="hint" id="keyHint"></span>
+  </div>
+  <div class="hint">키는 이 브라우저에만 저장됩니다(localStorage). 저장소·서버로 전송되지 않습니다.</div>
+</div>
+
+<div class="card">
+  <b>조회할 지번</b> <span class="hint">한 줄에 하나씩. 구·동까지 쓰면 정확합니다. 예: 영등포구 대림동 746-5</span>
+  <textarea id="jibunInput" rows="3" placeholder="영등포구 대림동 746-5&#10;영등포구 대림동 746-6"></textarea>
+  <div class="row" style="margin-top:8px">
+    <button id="btnQuery">조회</button>
+    <button class="ghost" id="btnCopy">표 복사 (엑셀 붙여넣기용)</button>
+    <label><input type="checkbox" id="chkHeader"> 복사 시 제목줄 포함</label>
+  </div>
+  <div id="status"></div>
+</div>
+
+<div class="card" id="fallbackPanel" hidden>
+  <b>⚠ 자동 호출이 차단되어 수동 모드로 전환합니다</b>
+  <div class="hint">아래 링크를 새 탭에서 열고, 나온 글자 전체를 복사해서(Ctrl+A → Ctrl+C) 붙여넣은 뒤 [적용]을 누르세요.</div>
+  <div style="margin:8px 0"><a id="fbLink" href="#" target="_blank" rel="noopener"></a></div>
+  <textarea id="fbPaste" rows="4" placeholder="여기에 붙여넣기"></textarea>
+  <div style="margin-top:6px"><button id="btnFbApply">적용</button></div>
+</div>
+
+<div class="card tablewrap">
+  <table id="resultTable">
+    <thead><tr id="headRow"></tr></thead>
+    <tbody id="bodyRows"></tbody>
+  </table>
+  <div class="hint" style="margin-top:6px">노란 칸(방위·저촉률 등)은 API가 제공하지 않아 직접 입력하는 칸입니다. 모든 칸은 클릭해서 수정할 수 있고, 복사 버튼은 수정된 내용을 그대로 가져갑니다.</div>
+</div>
+
+<script>
+'use strict';
+// ================= 상수/표기 변환 =================
+var COLS=['소재지','지번','지목','면적','공시지가','이용상황','지세','형상','방위','용도지역','접면','용도지구','계획시설','저촉률','제한구역기타','전년지가','전전년지가','비고'];
+var MANUAL_COLS={'방위':1,'저촉률':0}; // 값이 없을 때만 수동 표시(저촉률은 계획시설 없으면 0 자동)
+// 감정평가 관례 표기 변환 (API 정식명칭 → 산출근거표 표기)
+var MAP_YONGDO={'제1종전용주거지역':'1종전주','제2종전용주거지역':'2종전주','제1종일반주거지역':'1종일주','제2종일반주거지역':'2종일주','제3종일반주거지역':'3종일주','준주거지역':'준주거','중심상업지역':'중심상업','일반상업지역':'일반상업','근린상업지역':'근린상업','유통상업지역':'유통상업','전용공업지역':'전용공업','일반공업지역':'일반공업','준공업지역':'준공업','보전녹지지역':'보전녹지','생산녹지지역':'생산녹지','자연녹지지역':'자연녹지','보전관리지역':'보전관리','생산관리지역':'생산관리','계획관리지역':'계획관리','농림지역':'농림','자연환경보전지역':'자연환경'};
+var MAP_HYEONGSANG={'가로장방':'가장형','세로장방':'세장형','정방형':'정방형','사다리형':'사다리형','부정형':'부정형','자루형':'자루형','삼각형':'삼각형','역삼각형':'역삼각형'};
+var MAP_JEOPMYEON={'세로한면(가)':'세로(가)','세로각지(가)':'세각(가)','세로한면(불)':'세로(불)','세로각지(불)':'세각(불)'};
+// 제한구역기타 축약 + 제외(노이즈) 목록
+var MAP_GITA={'교육환경보호구역':'교육','토지거래계약에관한허가구역':'토허'};
+var GITA_EXCLUDE={'도시지역':1,'과밀억제권역':1,'대공방어협조구역':1,'가축사육제한구역':1,'상대보호구역':0,'절대보호구역':0};
+
+var API_BASE='https://api.vworld.kr';
+var KEY_STORAGE='exact-vworld-key';
+
+// ================= 인증키 =================
+function getKey(){try{return localStorage.getItem(KEY_STORAGE)||'';}catch(e){console.error('localStorage 읽기 실패',e);return '';}}
+function setKey(v){try{localStorage.setItem(KEY_STORAGE,v);}catch(e){console.error('localStorage 저장 실패',e);}}
+function refreshKeyHint(){var k=getKey();document.getElementById('keyHint').textContent=k?('저장됨: '+k.slice(0,8)+'…'):'키가 없으면 조회가 안 됩니다';if(k)document.getElementById('keyInput').placeholder='(저장됨) 바꾸려면 새로 입력';}
+document.getElementById('btnSaveKey').onclick=function(){var v=document.getElementById('keyInput').value.trim();if(!v){alert('키를 입력하세요');return;}setKey(v);document.getElementById('keyInput').value='';refreshKeyHint();};
+refreshKeyHint();
+
+// ================= API 호출 (fetch → JSONP → 수동붙여넣기 3단계) =================
+var netMode='auto'; // 'fetch' | 'jsonp' | 'manual' 로 확정되면 고정
+function tryFetch(url){return fetch(url).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();});}
+function tryJsonp(url){return new Promise(function(resolve,reject){
+  var cb='__vw_cb'+Math.floor(Math.random()*1e9);
+  var sc=document.createElement('script');var done=false;
+  window[cb]=function(data){done=true;cleanup();resolve(data);};
+  function cleanup(){delete window[cb];if(sc.parentNode)sc.parentNode.removeChild(sc);}
+  sc.onerror=function(){if(!done){cleanup();reject(new Error('JSONP 로드 실패'));}};
+  setTimeout(function(){if(!done){cleanup();reject(new Error('JSONP 시간초과'));}},8000);
+  sc.src=url+(url.indexOf('?')>=0?'&':'?')+'callback='+cb;
+  document.head.appendChild(sc);
+});}
+var manualQueue=Promise.resolve();
+function tryManual(url){
+  manualQueue=manualQueue.then(function(){return new Promise(function(resolve,reject){
+    var panel=document.getElementById('fallbackPanel'),link=document.getElementById('fbLink'),ta=document.getElementById('fbPaste');
+    panel.hidden=false;link.href=url;link.textContent=url;ta.value='';ta.focus();
+    document.getElementById('btnFbApply').onclick=function(){
+      var t=ta.value.trim();if(!t){alert('붙여넣은 내용이 없습니다');return;}
+      try{var j=JSON.parse(t);panel.hidden=true;resolve(j);}
+      catch(e){console.error('수동붙여넣기 JSON 파싱 실패',e);alert('내용이 JSON 형식이 아닙니다. 페이지 전체(Ctrl+A)를 복사했는지 확인하세요.');}
+    };
+  });});
+  return manualQueue;
+}
+function callApi(url){
+  if(netMode==='fetch')return tryFetch(url);
+  if(netMode==='jsonp')return tryJsonp(url);
+  if(netMode==='manual')return tryManual(url);
+  return tryFetch(url).then(function(d){netMode='fetch';return d;})
+    .catch(function(e1){console.error('fetch 실패 → JSONP 시도',e1);
+      return tryJsonp(url).then(function(d){netMode='jsonp';return d;})
+        .catch(function(e2){console.error('JSONP 실패 → 수동 모드',e2);netMode='manual';return tryManual(url);});});
+}
+
+// ================= 조회 로직 =================
+function fmtWon(n){var v=Number(n);return isNaN(v)?'':v.toLocaleString('ko-KR');}
+function mapWith(m,name){return m[name]!==undefined?m[name]:name;}
+function latestRecord(fields){ // 같은 연도 중복 레코드 → 기준연도 최대, 갱신일 최대 1건
+  var best=null;fields.forEach(function(f){
+    if(!best){best=f;return;}
+    if((f.stdrYear||'')>(best.stdrYear||'')){best=f;return;}
+    if((f.stdrYear||'')===(best.stdrYear||'')&&(f.lastUpdtDt||'')>(best.lastUpdtDt||''))best=f;
+  });return best;
+}
+function searchPnu(query,key){
+  var url=API_BASE+'/req/search?service=search&request=search&version=2.0&size=10&page=1&query='+encodeURIComponent(query)+'&type=address&category=parcel&format=json&errorformat=json&key='+key;
+  return callApi(url).then(function(d){
+    var resp=d&&d.response;
+    if(!resp||resp.status!=='OK'||!resp.result||!resp.result.items||!resp.result.items.length)
+      throw new Error('주소를 찾지 못했습니다: '+query+(resp&&resp.error?(' ('+resp.error.text+')'):''));
+    var it=resp.result.items[0];
+    return {pnu:it.id,addr:(it.address&&(it.address.parcel||it.address.road))||it.title||query};
+  });
+}
+function nedUrl(op,pnu,key,extra){return API_BASE+'/ned/data/'+op+'?key='+key+'&pnu='+pnu+'&format=json&numOfRows=100&pageNo=1'+(extra||'');}
+function queryParcel(query,key){
+  var out={};
+  return searchPnu(query,key).then(function(s){
+    out.pnu=s.pnu;out.addr=s.addr;
+    return callApi(nedUrl('getLandCharacteristics',s.pnu,key));
+  }).then(function(d){
+    var fields=(d&&d.landCharacteristicss&&d.landCharacteristicss.field)||[];
+    if(!fields.length)throw new Error('토지특성 정보가 없습니다 (PNU '+out.pnu+')');
+    var r=latestRecord(fields);
+    out.char=r;out.stdrYear=r.stdrYear;
+    return callApi(nedUrl('getLandUseAttr',out.pnu,key));
+  }).then(function(d){
+    out.uses=(d&&d.landUses&&d.landUses.field)||[];
+    return callApi(nedUrl('getIndvdLandPriceAttr',out.pnu,key));
+  }).then(function(d){
+    out.prices=(d&&d.indvdLandPrices&&d.indvdLandPrices.field)||[];
+    return out;
+  });
+}
+function classifyUses(uses){
+  var jigu=[],sisul=[],gita=[];
+  uses.forEach(function(u){
+    var name=u.prposAreaDstrcCodeNm||'',rel=u.cnflcAtNm||'';
+    if(!name)return;
+    if(MAP_YONGDO[name]!==undefined)return;            // 용도지역 → 별도 칸에서 처리
+    if(GITA_EXCLUDE[name]===1)return;                  // 노이즈 제외
+    if(rel==='접함')return;                            // 접함은 저촉 아님 → 표에 안 씀
+    if(rel==='저촉'){sisul.push(name);return;}         // 저촉 = 계획시설란
+    if(/지구$/.test(name)){jigu.push(name);return;}
+    gita.push(mapWith(MAP_GITA,name));
+  });
+  function uniq(a){return a.filter(function(v,i){return a.indexOf(v)===i;});}
+  return {jigu:uniq(jigu).join(', '),sisul:uniq(sisul).join(', ')||'없음',gita:uniq(gita).join(', ')};
+}
+function buildRow(out){
+  var c=out.char,u=classifyUses(out.uses);
+  var baseYear=Number(c.stdrYear);
+  var priceByYear={};out.prices.forEach(function(p){priceByYear[Number(p.stdrYear)]=p.pblntfPclnd;});
+  var vals={};
+  vals['소재지']=(c.ldCodeNm||'').split(' ').pop();
+  vals['지번']=c.mnnmSlno||'';
+  vals['지목']=c.lndcgrCodeNm||'';
+  vals['면적']=c.lndpclAr||'';
+  vals['공시지가']=fmtWon(c.pblntfPclnd);
+  vals['이용상황']=c.ladUseSittnNm||'';
+  vals['지세']=c.tpgrphHgCodeNm||'';
+  vals['형상']=mapWith(MAP_HYEONGSANG,c.tpgrphFrmCodeNm||'');
+  vals['방위']='';
+  vals['용도지역']=mapWith(MAP_YONGDO,c.prposArea1Nm||'')+(c.prposArea2Nm&&c.prposArea2Nm!=='지정되지않음'?(', '+mapWith(MAP_YONGDO,c.prposArea2Nm)):'');
+  vals['접면']=mapWith(MAP_JEOPMYEON,c.roadSideCodeNm||'');
+  vals['용도지구']=u.jigu;
+  vals['계획시설']=u.sisul;
+  vals['저촉률']=(u.sisul==='없음')?'0':'';
+  vals['제한구역기타']=u.gita;
+  vals['전년지가']=fmtWon(priceByYear[baseYear-1]);
+  vals['전전년지가']=fmtWon(priceByYear[baseYear-2]);
+  vals['비고']=baseYear+'년';
+  return vals;
+}
+
+// ================= 화면 =================
+(function initHead(){var tr=document.getElementById('headRow');COLS.forEach(function(c){var th=document.createElement('th');th.textContent=c;tr.appendChild(th);});var th=document.createElement('th');th.textContent='';tr.appendChild(th);})();
+function addRow(vals){
+  var tr=document.createElement('tr');
+  COLS.forEach(function(c){
+    var td=document.createElement('td');td.textContent=vals[c]||'';td.contentEditable='true';
+    if((c==='방위')||(c==='저촉률'&&vals[c]==='')) td.className='manual';
+    tr.appendChild(td);
+  });
+  var del=document.createElement('td');del.textContent='✕';del.className='del';del.title='행 삭제';
+  del.onclick=function(){tr.parentNode.removeChild(tr);};
+  tr.appendChild(del);
+  document.getElementById('bodyRows').appendChild(tr);
+}
+function setStatus(msg,isErr){var el=document.getElementById('status');el.textContent=msg;el.className=isErr?'err':'';}
+document.getElementById('btnQuery').onclick=function(){
+  var key=getKey();if(!key){alert('먼저 브이월드 인증키를 저장하세요');return;}
+  var lines=document.getElementById('jibunInput').value.split('\n').map(function(s){return s.trim();}).filter(Boolean);
+  if(!lines.length){alert('조회할 지번을 입력하세요');return;}
+  var btn=this;btn.disabled=true;
+  var chain=Promise.resolve(),done=0,fail=0;
+  lines.forEach(function(q){
+    chain=chain.then(function(){
+      setStatus('조회 중… ('+(done+fail+1)+'/'+lines.length+') '+q);
+      return queryParcel(q,key).then(function(out){addRow(buildRow(out));done++;})
+        .catch(function(e){console.error('조회 실패: '+q,e);fail++;setStatus('실패: '+q+' — '+e.message,true);});
+    });
+  });
+  chain.then(function(){btn.disabled=false;setStatus('완료: 성공 '+done+'건'+(fail?(', 실패 '+fail+'건 (자세한 내용은 위 메시지)'):''),fail>0);});
+};
+document.getElementById('btnCopy').onclick=function(){
+  var rows=[];
+  if(document.getElementById('chkHeader').checked)rows.push(COLS.join('\t'));
+  var trs=document.getElementById('bodyRows').children;
+  for(var i=0;i<trs.length;i++){var cells=trs[i].children,vals=[];for(var j=0;j<COLS.length;j++)vals.push(cells[j].textContent.trim());rows.push(vals.join('\t'));}
+  if(!rows.length){alert('복사할 행이 없습니다');return;}
+  var text=rows.join('\n');
+  navigator.clipboard.writeText(text).then(function(){setStatus('복사 완료 — 엑셀에서 Ctrl+V 하세요 ('+(trs.length)+'행)');})
+    .catch(function(e){console.error('클립보드 복사 실패',e);
+      var ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();
+      try{document.execCommand('copy');setStatus('복사 완료 — 엑셀에서 Ctrl+V 하세요');}
+      catch(e2){console.error('execCommand 복사도 실패',e2);alert('복사가 안 됩니다. 표를 마우스로 긁어서 복사하세요.');}
+      document.body.removeChild(ta);});
+};
+</script>
+</body>
+</html>
