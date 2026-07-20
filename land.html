@@ -65,14 +65,13 @@
     <thead><tr id="headRow"></tr></thead>
     <tbody id="bodyRows"></tbody>
   </table>
-  <div class="hint" style="margin-top:6px">노란 칸(방위·저촉률 등)은 API가 제공하지 않아 직접 입력하는 칸입니다. 모든 칸은 클릭해서 수정할 수 있고, 복사 버튼은 수정된 내용을 그대로 가져갑니다.</div>
+  <div class="hint" style="margin-top:6px">계획시설이 저촉으로 잡힌 경우 저촉률(노란 칸)은 API가 제공하지 않아 직접 입력합니다. 모든 칸은 클릭해서 수정할 수 있고, 복사 버튼은 수정된 내용을 그대로 가져갑니다.</div>
 </div>
 
 <script>
 'use strict';
 // ================= 상수/표기 변환 =================
-var COLS=['소재지','지번','지목','면적','공시지가','이용상황','지세','형상','방위','용도지역','접면','용도지구','계획시설','저촉률','제한구역기타','전년지가','전전년지가','비고'];
-var MANUAL_COLS={'방위':1,'저촉률':0}; // 값이 없을 때만 수동 표시(저촉률은 계획시설 없으면 0 자동)
+var COLS=['소재지','지번','지목','면적','공시지가','이용상황','지세','형상','용도지역','접면','용도지구','계획시설','저촉률','제한구역기타','전년지가','전전년지가','비고'];
 // 감정평가 관례 표기 변환 (API 정식명칭 → 산출근거표 표기)
 var MAP_YONGDO={'제1종전용주거지역':'1종전주','제2종전용주거지역':'2종전주','제1종일반주거지역':'1종일주','제2종일반주거지역':'2종일주','제3종일반주거지역':'3종일주','준주거지역':'준주거','중심상업지역':'중심상업','일반상업지역':'일반상업','근린상업지역':'근린상업','유통상업지역':'유통상업','전용공업지역':'전용공업','일반공업지역':'일반공업','준공업지역':'준공업','보전녹지지역':'보전녹지','생산녹지지역':'생산녹지','자연녹지지역':'자연녹지','보전관리지역':'보전관리','생산관리지역':'생산관리','계획관리지역':'계획관리','농림지역':'농림','자연환경보전지역':'자연환경'};
 var MAP_HYEONGSANG={'가로장방':'가장형','세로장방':'세장형','정방형':'정방형','사다리형':'사다리형','부정형':'부정형','자루형':'자루형','삼각형':'삼각형','역삼각형':'역삼각형'};
@@ -195,7 +194,6 @@ function buildRow(out){
   vals['이용상황']=c.ladUseSittnNm||'';
   vals['지세']=c.tpgrphHgCodeNm||'';
   vals['형상']=mapWith(MAP_HYEONGSANG,c.tpgrphFrmCodeNm||'');
-  vals['방위']='';
   vals['용도지역']=mapWith(MAP_YONGDO,c.prposArea1Nm||'')+(c.prposArea2Nm&&c.prposArea2Nm!=='지정되지않음'?(', '+mapWith(MAP_YONGDO,c.prposArea2Nm)):'');
   vals['접면']=mapWith(MAP_JEOPMYEON,c.roadSideCodeNm||'');
   vals['용도지구']=u.jigu;
@@ -214,7 +212,7 @@ function addRow(vals){
   var tr=document.createElement('tr');
   COLS.forEach(function(c){
     var td=document.createElement('td');td.textContent=vals[c]||'';td.contentEditable='true';
-    if((c==='방위')||(c==='저촉률'&&vals[c]==='')) td.className='manual';
+    if(c==='저촉률'&&vals[c]==='') td.className='manual';
     tr.appendChild(td);
   });
   var del=document.createElement('td');del.textContent='✕';del.className='del';del.title='행 삭제';
