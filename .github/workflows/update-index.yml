@@ -6,6 +6,11 @@ on:
   schedule:
     - cron: '0 21 * * *'   # UTC 21:00 = KST 06:00
   workflow_dispatch:
+    inputs:
+      cap_only:
+        description: '자본수익률만 받기 (주거 매매지수 생략 — 테스트용, 2~3분)'
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -20,7 +25,8 @@ jobs:
         shell: pwsh
         env:
           RONE_API_KEY: ${{ secrets.RONE_API_KEY }}
-        run: ./arap_launch.ps1 -FetchOnly
+        run: |
+          if ("${{ inputs.cap_only }}" -eq "true") { ./arap_launch.ps1 -FetchOnly -CapOnly } else { ./arap_launch.ps1 -FetchOnly }
 
       - name: 변경분만 커밋·푸시
         run: |
