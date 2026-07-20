@@ -2,7 +2,7 @@
 # - 'EXACT 실행.bat'이 이 파일을 호출한다. 직접 실행해도 된다.
 # - 지수 데이터(arap_index_data.js)가 없으면: 먼저 받고 앱을 연다.
 # - 있으면: 앱을 먼저 열고, 하루 이상 지난 경우 백그라운드로 새로 받는다.
-param([switch]$FetchOnly)
+param([switch]$FetchOnly, [switch]$CapOnly)   # -CapOnly: 자본수익률(비주거)만 받아 기존 데이터에 병합 (주거 매매지수 재수신 생략 — 테스트·부분갱신용)
 
 $ErrorActionPreference = "Stop"
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
@@ -77,8 +77,10 @@ function Fetch-CapReturn {
     $all = $lj.SttsApiTbl[1].row
   } catch { Write-Host "  통계목록 조회 실패(자본수익률 생략): $_" -ForegroundColor Yellow; return $null }
   if (-not $all) { Write-Host "  통계목록 비어있음 — 자본수익률 생략"; return $null }
-  $cands = @($all | Where-Object { $_.STATBL_NM -match "자본수익률" })
-  Write-Host ("  '자본수익률' 통계표 후보 {0}건" -f $cands.Count)
+  # 2024Q3 통계개편으로 표가 세대교체됨: 구세대는 "임대동향 자본수익률(…)", 신세대(2024년3분기~)는 "임대동향 수익률(분기)(…)"
+  # 이름에 '자본수익률'만 매칭하면 신세대(최신 분기)를 놓침 → '임대동향'+'수익률'로 넓게 잡고, 행 단위 ITM_NM 필터가 자본수익률만 골라냄
+  $cands = @($all | Where-Object { $_.STATBL_NM -match "임대동향" -and $_.STATBL_NM -match "수익률" })
+  Write-Host ("  임대동향 수익률 통계표 후보 {0}건" -f $cands.Count)
   foreach ($c in $cands) { Write-Host ("    [{0}] {1} ({2})" -f $c.STATBL_ID, $c.STATBL_NM, $c.DTACYCLE_NM) }
   # 후보 표는 연도구간별로 쪼개져 있음(2022~, 2021, 2020, …) → 유형별로 모든 기간표를 병합해 전체 이력 확보.
   # 주기는 반드시 QY(분기)로 조회한다(목록의 DTACYCLE_CD는 '매년,분기' 복합값이라 그대로 쓰면 조회가 비어 SttsApiTblData=null).
@@ -95,31 +97,38 @@ function Fetch-CapReturn {
     $regions = [ordered]@{}
     $latest = ""
     foreach ($sid in $byType[$kind]) {
-      try {
-        $durl = "{0}?STATBL_ID={1}&DTACYCLE_CD=QY&Type=json&pIndex=1&pSize=1000&KEY={2}" -f $apiBase, $sid, $apiKey
-        $dj = Invoke-Rone $durl
-      } catch { Write-Host ("    {0} {1} 호출실패: {2}" -f $kind, $sid, $_) -ForegroundColor Yellow; continue }
-      $rows = if ($dj.SttsApiTblData -and @($dj.SttsApiTblData).Count -ge 2) { $dj.SttsApiTblData[1].row } else { $null }
-      if (-not $diagShown) {
-        $diagShown = $true
-        if ($rows -and @($rows).Count -ge 1) {
-          $r0 = @($rows)[0]
-          Write-Host ("    [진단] {0} 첫행: WRTTIME={1} CLS_NM={2} CLS_FULLNM={3} ITM_NM={4} DTA_VAL={5}" -f $sid, $r0.WRTTIME_IDTFR_ID, $r0.CLS_NM, $r0.CLS_FULLNM, $r0.ITM_NM, $r0.DTA_VAL) -ForegroundColor Cyan
-        } else {
-          $raw = ($dj | ConvertTo-Json -Depth 4 -Compress); if (-not $raw) { $raw = "(null)" }
-          Write-Host ("    [진단] {0} 응답(앞400자): {1}" -f $sid, $raw.Substring(0, [math]::Min(400, $raw.Length))) -ForegroundColor Yellow
+      # 한 표가 지역 300개↑ × 분기 수십 개라 1,000행/페이지를 넘음 → 페이지를 끝까지 넘긴다 (안 그러면 최신 분기가 잘림)
+      for ($pg = 1; $pg -le 40; $pg++) {
+        try {
+          $durl = "{0}?STATBL_ID={1}&DTACYCLE_CD=QY&Type=json&pIndex={2}&pSize=1000&KEY={3}" -f $apiBase, $sid, $pg, $apiKey
+          $dj = Invoke-Rone $durl
+        } catch { Write-Host ("    {0} {1} p{2} 호출실패: {3}" -f $kind, $sid, $pg, $_) -ForegroundColor Yellow; break }
+        $rows = if ($dj.SttsApiTblData -and @($dj.SttsApiTblData).Count -ge 2) { $dj.SttsApiTblData[1].row } else { $null }
+        if (-not $diagShown) {
+          $diagShown = $true
+          if ($rows -and @($rows).Count -ge 1) {
+            $r0 = @($rows)[0]
+            Write-Host ("    [진단] {0} 첫행: WRTTIME={1} CLS_NM={2} CLS_FULLNM={3} ITM_NM={4} DTA_VAL={5}" -f $sid, $r0.WRTTIME_IDTFR_ID, $r0.CLS_NM, $r0.CLS_FULLNM, $r0.ITM_NM, $r0.DTA_VAL) -ForegroundColor Cyan
+          } else {
+            $raw = ($dj | ConvertTo-Json -Depth 4 -Compress); if (-not $raw) { $raw = "(null)" }
+            Write-Host ("    [진단] {0} 응답(앞400자): {1}" -f $sid, $raw.Substring(0, [math]::Min(400, $raw.Length))) -ForegroundColor Yellow
+          }
         }
-      }
-      if (-not $rows) { continue }
-      foreach ($r in $rows) {
-        if ($r.ITM_NM -and ($r.ITM_NM -notmatch "자본수익률")) { continue }   # 한 표에 여러 항목이 섞인 경우 자본수익률만
-        $q = ConvertTo-QKey $r.WRTTIME_IDTFR_ID
-        if (-not $q) { continue }
-        $reg = if ($r.CLS_NM) { [string]$r.CLS_NM } elseif ($r.CLS_FULLNM) { ([string]$r.CLS_FULLNM -split ">")[-1] } else { "전국" }
-        $reg = $reg.Trim()
-        if (-not $regions.Contains($reg)) { $regions[$reg] = [ordered]@{} }
-        $regions[$reg][$q] = [math]::Round([double]$r.DTA_VAL, 2)   # 공표 자본수익률(%)은 소수 2자리
-        if ($q -gt $latest) { $latest = $q }
+        if (-not $rows) { break }
+        foreach ($r in $rows) {
+          if ($r.ITM_NM -and ($r.ITM_NM -notmatch "자본수익률")) { continue }   # 한 표에 여러 항목(투자/소득/자본)이 섞임 — 자본수익률만
+          $q = ConvertTo-QKey $r.WRTTIME_IDTFR_ID
+          if (-not $q) { continue }
+          # 지역은 시도 단위까지만(전체·서울·부산…). 상권 단위 300개↑는 시점수정에 안 쓰고 파일만 커짐
+          $fullParts = @(([string]$r.CLS_FULLNM) -split ">")
+          if ($fullParts.Count -gt 2) { continue }
+          $reg = if ($r.CLS_NM) { [string]$r.CLS_NM } elseif ($r.CLS_FULLNM) { $fullParts[-1] } else { "전국" }
+          $reg = $reg.Trim()
+          if (-not $regions.Contains($reg)) { $regions[$reg] = [ordered]@{} }
+          $regions[$reg][$q] = [math]::Round([double]$r.DTA_VAL, 2)   # 공표 자본수익률(%)은 소수 2자리
+          if ($q -gt $latest) { $latest = $q }
+        }
+        if (@($rows).Count -lt 1000) { break }   # 마지막 페이지
       }
     }
     if ($regions.Count -eq 0) { Write-Host ("    {0} 자료없음" -f $kind) -ForegroundColor Yellow; continue }
@@ -133,6 +142,24 @@ function Fetch-CapReturn {
     source    = "한국부동산원 R-ONE 상업용부동산 임대동향조사 (분기) — 자본수익률"
     types     = $types
   }
+}
+
+# -CapOnly: 주거 매매지수는 그대로 두고 자본수익률만 새로 받아 기존 파일에 병합 (테스트 1회 2~3분)
+function Update-CapReturnOnly {
+  if (-not $apiKey) { throw "API 키가 없습니다. (환경변수 RONE_API_KEY 또는 arap_apikey.local.txt)" }
+  if (-not (Test-Path $dataFile)) { throw "기존 arap_index_data.js가 없습니다. 전체 수신(-FetchOnly)을 먼저 실행하세요." }
+  $txt = [IO.File]::ReadAllText($dataFile)
+  $json = $txt -replace '^\s*window\.ARAP_INDEX_DATA\s*=\s*', ''
+  $json = $json.TrimEnd().TrimEnd(';')
+  $out = $json | ConvertFrom-Json
+  $cap = Fetch-CapReturn
+  if (-not $cap) { throw "자본수익률 수신 실패 — 기존 파일은 그대로 둠" }
+  $out | Add-Member -NotePropertyName capReturn -NotePropertyValue $cap -Force
+  $js = "window.ARAP_INDEX_DATA=" + ($out | ConvertTo-Json -Depth 8 -Compress) + ";"
+  $tmp = $dataFile + ".tmp"
+  [IO.File]::WriteAllText($tmp, $js, (New-Object Text.UTF8Encoding($false)))
+  Move-Item -Force $tmp $dataFile
+  Write-Host ("완료(자본수익률만 갱신): {0}" -f (@($cap.types.Keys) -join "/")) -ForegroundColor Green
 }
 
 function Fetch-IndexData {
@@ -181,6 +208,8 @@ function Fetch-IndexData {
   $capNote = if ($out.capReturn) { "자본수익률 " + (@($out.capReturn.types.Keys) -join "/") } else { "자본수익률 없음" }
   Write-Host ("완료: {0} (매매지수 최신 {1} · {2})" -f (Split-Path -Leaf $dataFile), $out.tables["아파트"].latest, $capNote) -ForegroundColor Green
 }
+
+if ($CapOnly) { Update-CapReturnOnly; exit 0 }
 
 $hasData = Test-Path $dataFile
 
