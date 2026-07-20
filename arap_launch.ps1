@@ -20,6 +20,21 @@ if (-not $apiKey) {
 $apiBase  = "https://www.reb.or.kr/r-one/openapi/SttsApiTblData.do"
 $listBase = "https://www.reb.or.kr/r-one/openapi/SttsApiTbl.do"   # 통계목록(자본수익률 표 자동탐색용)
 
+# 부동산원 API가 간헐적으로 느림 → 단일 호출 타임아웃(30초)에 걸리면 전체 수신이 중단됐음.
+# 타임아웃 60초 + 최대 3회 재시도로 일시적 지연을 흡수한다(주거·비주거 공용).
+function Invoke-Rone($url) {
+  $attempt = 0
+  while ($true) {
+    $attempt++
+    try { return Invoke-RestMethod -Uri $url -TimeoutSec 60 }
+    catch {
+      if ($attempt -ge 4) { throw }
+      Write-Host ("    (재시도 {0}/3: {1})" -f $attempt, $_.Exception.Message) -ForegroundColor DarkYellow
+      Start-Sleep -Seconds ([math]::Min(8, [math]::Pow(2, $attempt)))
+    }
+  }
+}
+
 # 서울 지역코드 (R-ONE CLS_ID, 2026-07 확인 — 통계코드는 고정값)
 # 아파트(A_2024_00045)는 구 단위까지, 연립다세대(A_2024_00080)는 권역 단위까지만 공표됨
 $tables = [ordered]@{
@@ -58,7 +73,7 @@ function Fetch-CapReturn {
   Write-Host "상업용부동산 자본수익률(분기) 수신 중..." -ForegroundColor Cyan
   try {
     $lurl = "{0}?Type=json&pIndex=1&pSize=1000&KEY={1}" -f $listBase, $apiKey
-    $lj = Invoke-RestMethod -Uri $lurl -TimeoutSec 30
+    $lj = Invoke-Rone $lurl
     $all = $lj.SttsApiTbl[1].row
   } catch { Write-Host "  통계목록 조회 실패(자본수익률 생략): $_" -ForegroundColor Yellow; return $null }
   if (-not $all) { Write-Host "  통계목록 비어있음 — 자본수익률 생략"; return $null }
@@ -72,7 +87,7 @@ function Fetch-CapReturn {
     $cyc = if ($c.DTACYCLE_CD) { [string]$c.DTACYCLE_CD } else { "QY" }
     try {
       $durl = "{0}?STATBL_ID={1}&DTACYCLE_CD={2}&Type=json&pIndex=1&pSize=1000&KEY={3}" -f $apiBase, $c.STATBL_ID, $cyc, $apiKey
-      $dj = Invoke-RestMethod -Uri $durl -TimeoutSec 30
+      $dj = Invoke-Rone $durl
       $rows = $dj.SttsApiTblData[1].row
     } catch { Write-Host ("    {0} 데이터 실패: {1}" -f $kind, $_) -ForegroundColor Yellow; continue }
     if (-not $rows) { Write-Host ("    {0} 자료없음" -f $kind); continue }
@@ -119,7 +134,7 @@ function Fetch-IndexData {
       $n++
       Write-Host ("  {0} {1}/{2}" -f $kind, $n, $t.cls.Count) -NoNewline
       $url = "{0}?STATBL_ID={1}&DTACYCLE_CD=MM&CLS_ID={2}&Type=json&pIndex=1&pSize=1000&KEY={3}" -f $apiBase, $t.id, $cid, $apiKey
-      $j = Invoke-RestMethod -Uri $url -TimeoutSec 30
+      $j = Invoke-Rone $url
       $rows = $j.SttsApiTblData[1].row
       if (-not $rows) { Write-Host " (자료없음)"; continue }
       $full = $rows[0].CLS_FULLNM
