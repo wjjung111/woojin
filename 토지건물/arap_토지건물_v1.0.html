@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ARAP 토지건물 v1.0</title>
+<style>
+  :root{
+    --bg:#f4f6f9; --card:#fff; --line:#e2e6ec; --ink:#1c2530; --muted:#6b7688;
+    --accent:#2563eb; --accent-soft:#eaf1ff; --ok:#0f9d58; --warn:#e8a400;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:"Malgun Gothic","맑은 고딕",system-ui,sans-serif;
+       background:var(--bg);color:var(--ink);font-size:14px;line-height:1.5}
+  header{background:var(--card);border-bottom:1px solid var(--line);padding:14px 20px}
+  header h1{margin:0;font-size:17px}
+  header .sub{color:var(--muted);font-size:12px;margin-top:2px}
+  .wrap{max-width:900px;margin:22px auto;padding:0 16px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;
+        padding:18px 20px;margin-bottom:18px}
+  .card h2{margin:0 0 4px;font-size:15px;display:flex;align-items:center;gap:8px}
+  .card .desc{color:var(--muted);font-size:12px;margin-bottom:14px}
+  .badge{background:var(--accent-soft);color:var(--accent);font-size:11px;
+         padding:2px 8px;border-radius:20px;font-weight:600}
+  .row{display:grid;grid-template-columns:150px 1fr;gap:10px;align-items:center;margin-bottom:10px}
+  .row label{color:var(--muted);font-size:13px}
+  input[type=text],input[type=number]{width:100%;padding:8px 10px;border:1px solid var(--line);
+        border-radius:8px;font-size:14px;font-family:inherit}
+  input:focus{outline:none;border-color:var(--accent)}
+  textarea{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;
+        font-size:12px;font-family:"Consolas",monospace;min-height:96px;resize:vertical}
+  .factors{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-top:6px}
+  .factors .f{text-align:center}
+  .factors .f small{display:block;color:var(--muted);font-size:11px;margin-bottom:3px}
+  .factors input{text-align:center;padding:6px 4px}
+  .hint{color:var(--muted);font-size:11px;margin-top:4px}
+  .sijeom-result{background:var(--accent-soft);border-radius:8px;padding:8px 12px;
+        margin-top:8px;font-size:13px;display:none}
+  .sijeom-result b{font-size:16px;color:var(--accent)}
+  .result-card{background:linear-gradient(135deg,#1e3a8a,#2563eb);color:#fff;border:none}
+  .result-card h2{color:#fff}
+  .result-line{display:flex;justify-content:space-between;padding:7px 0;
+        border-bottom:1px solid rgba(255,255,255,.15);font-size:13px}
+  .result-line:last-child{border:none}
+  .result-line .k{opacity:.85}
+  .result-line .v{font-variant-numeric:tabular-nums;font-weight:600}
+  .result-final{font-size:22px;margin-top:8px;padding-top:12px}
+  .result-final .v{font-size:24px}
+  .formula{font-family:"Consolas",monospace;font-size:11px;opacity:.8;margin-top:10px;
+        background:rgba(0,0,0,.15);padding:8px 10px;border-radius:6px;line-height:1.7}
+  .verify{margin-top:10px;font-size:12px;padding:8px 12px;border-radius:8px;display:none}
+  .verify.pass{background:#e6f7ee;color:var(--ok);border:1px solid #b8e6cd}
+  .verify.fail{background:#fdeaea;color:#c0392b;border:1px solid #f3c0c0}
+  button{cursor:pointer;font-family:inherit}
+  .btn-ghost{background:none;border:1px solid var(--line);border-radius:8px;padding:6px 12px;
+        color:var(--accent);font-size:12px}
+  .btn-ghost:hover{background:var(--accent-soft)}
+</style>
+</head>
+<body>
+<header>
+  <h1>🏢 ARAP 토지건물 <span style="color:var(--accent)">v1.0</span></h1>
+  <div class="sub">Sprint 1 · 토지 공시지가기준법 계산기 &nbsp;|&nbsp; 판단은 평가사, 계산은 앱</div>
+</header>
+
+<div class="wrap">
+
+  <!-- 1. 본건 정보 -->
+  <div class="card">
+    <h2>① 본건 정보</h2>
+    <div class="desc">평가 대상 필지 기본값</div>
+    <div class="row"><label>토지 면적 (㎡)</label><input type="number" id="area" value="136" step="0.01"></div>
+    <div class="row"><label>기준시점</label><input type="text" id="baseDate" value="2026-02-25"></div>
+  </div>
+
+  <!-- 2. 표준지 -->
+  <div class="card">
+    <h2>② 표준지 <span class="badge">평가사 선정</span></h2>
+    <div class="desc">비교표준지의 공시지가 (카파허브에서 조회한 값 입력)</div>
+    <div class="row"><label>표준지 공시지가 (원/㎡)</label><input type="number" id="stdPrice" value="3533000" step="1000"></div>
+  </div>
+
+  <!-- 3. 시점수정 -->
+  <div class="card">
+    <h2>③ 시점수정치</h2>
+    <div class="desc">지가변동률 텍스트를 붙여넣으면 산식을 자동 계산합니다. (직접 입력도 가능)</div>
+    <div class="row" style="grid-template-columns:150px 1fr;align-items:start">
+      <label>지가변동률 붙여넣기</label>
+      <div>
+        <textarea id="sijeomText" placeholder="예)  ( 1 + 0.00471 ) * ( 1 + 0.00490 * 25/28 )  ≒ 1.00911">( 1 + 0.00471 ) * ( 1 + 0.00490 * 25/28 )
+ ≒ 1.00911</textarea>
+        <div class="hint">↑ 카파허브에서 복사한 지가변동률 산식 그대로 붙여넣으세요. 곱셈식을 찾아 자동 계산합니다.</div>
+        <div class="sijeom-result" id="sijeomResult"></div>
+      </div>
+    </div>
+    <div class="row"><label>적용 시점수정치</label><input type="number" id="sijeom" value="1.00911" step="0.00001"></div>
+  </div>
+
+  <!-- 4. 개별요인비교 -->
+  <div class="card">
+    <h2>④ 개별요인비교 (본건 / 표준지) <span class="badge">평가사 판단</span></h2>
+    <div class="desc">각 항목의 우열 비교치를 입력하세요. 앱은 곱해서 '계'만 자동 계산합니다. (동등 = 1.00)</div>
+    <div class="factors">
+      <div class="f"><small>가로</small><input type="number" class="fac" value="1" step="0.01"></div>
+      <div class="f"><small>접근</small><input type="number" class="fac" value="1" step="0.01"></div>
+      <div class="f"><small>환경</small><input type="number" class="fac" value="1" step="0.01"></div>
+      <div class="f"><small>획지</small><input type="number" class="fac" value="1" step="0.01"></div>
+      <div class="f"><small>행정</small><input type="number" class="fac" value="1" step="0.01"></div>
+      <div class="f"><small>기타</small><input type="number" class="fac" value="1" step="0.01"></div>
+    </div>
+    <div class="hint">개별요인 비교(계) = <b id="facProduct">1.000</b> (가로×접근×환경×획지×행정×기타, 소수 3자리 반올림)</div>
+  </div>
+
+  <!-- 5. 그밖의요인 -->
+  <div class="card">
+    <h2>⑤ 그밖의요인 보정치 <span class="badge">평가사 결정</span></h2>
+    <div class="desc">평가선례 대비 보정치. V1.0에서는 결정값을 직접 입력합니다. (선례 자동산정은 Sprint 2에서)</div>
+    <div class="row"><label>그밖의요인 보정치</label><input type="number" id="etcFactor" value="1.98" step="0.01"></div>
+  </div>
+
+  <!-- 결과 -->
+  <div class="card result-card">
+    <h2>📊 공시지가기준법 시산가액</h2>
+    <div class="result-line"><span class="k">표준지 공시지가</span><span class="v"><span id="rStd"></span> 원/㎡</span></div>
+    <div class="result-line"><span class="k">× 시점수정치</span><span class="v" id="rSijeom"></span></div>
+    <div class="result-line"><span class="k">× 개별요인 비교(계)</span><span class="v" id="rFac"></span></div>
+    <div class="result-line"><span class="k">× 그밖의요인 보정치</span><span class="v" id="rEtc"></span></div>
+    <div class="result-line"><span class="k">= 산정단가</span><span class="v"><span id="rCalc"></span> 원/㎡</span></div>
+    <div class="result-line"><span class="k">→ 결정단가 (만원 반올림)</span><span class="v"><span id="rDecided"></span> 원/㎡</span></div>
+    <div class="result-line result-final"><span class="k">토지 시산가액</span><span class="v"><span id="rTotal"></span> 원</span></div>
+    <div class="formula" id="rFormula"></div>
+  </div>
+
+  <!-- 검증 -->
+  <div class="card">
+    <h2>✅ 자체 검증</h2>
+    <div class="desc">엑셀 실제 사례값과 일치하는지 자동 확인 (기준값: 시산가액 960,160,000원)</div>
+    <button class="btn-ghost" onclick="loadExcelCase()">엑셀 검증사례 값 불러오기</button>
+    <div class="verify" id="verifyBox"></div>
+  </div>
+
+</div>
+
+<script>
+"use strict";
+
+// 숫자 → 천단위 콤마
+function comma(n){ if(!isFinite(n)) return "-"; return Math.round(n).toLocaleString("ko-KR"); }
+
+// 지가변동률 텍스트에서 곱셈 산식을 뽑아 안전하게 계산
+// 입력 예: "( 1 + 0.00471 ) * ( 1 + 0.00490 * 25/28 )  ≒ 1.00911"
+function parseSijeom(text){
+  if(!text) return null;
+  // ≒ 또는 = 뒤(최종 결과 표기)는 잘라내고, 산식 부분만 사용
+  let expr = text.split(/≒|≈|=/)[0];
+  // 곱셈 산식이 있는 줄만 추출 (괄호+곱셈이 든 부분)
+  const m = expr.match(/\([^≒≈=]*[\d.][^≒≈=]*\)(?:\s*\*\s*\([^)]*\))*/g);
+  if(m && m.length){ expr = m.join(" * "); }
+  // 안전장치: 허용 문자(숫자 . + - * / ( ) 공백)만 남기고 검사
+  const clean = expr.replace(/\s+/g," ").trim();
+  if(!/^[\d.\s+\-*/()]+$/.test(clean) || !/\d/.test(clean)) return null;
+  try{
+    // 산술식만 통과하므로 안전. 결과가 유한한 양수일 때만 인정
+    const val = Function('"use strict";return ('+clean+')')();
+    if(typeof val==="number" && isFinite(val) && val>0 && val<3) return val;
+  }catch(e){ console.error("시점수정 산식 계산 실패:", e); }
+  return null;
+}
+
+function recalcSijeom(){
+  const box = document.getElementById("sijeomResult");
+  const val = parseSijeom(document.getElementById("sijeomText").value);
+  if(val==null){ box.style.display="none"; return; }
+  box.style.display="block";
+  box.innerHTML = "산식 자동계산 결과: <b>"+val.toFixed(5)+"</b> &nbsp;<button class='btn-ghost' onclick='applySijeom("+val+")'>이 값 적용 →</button>";
+}
+function applySijeom(v){ document.getElementById("sijeom").value = Number(v).toFixed(5); recalc(); }
+
+function factorProduct(){
+  let p = 1;
+  document.querySelectorAll(".fac").forEach(el=>{ p *= (parseFloat(el.value)||0); });
+  return Math.round(p*1000)/1000;   // 엑셀 ROUND(...,3)
+}
+
+function recalc(){
+  const area   = parseFloat(document.getElementById("area").value)||0;
+  const std    = parseFloat(document.getElementById("stdPrice").value)||0;
+  const sijeom = parseFloat(document.getElementById("sijeom").value)||0;
+  const fac    = factorProduct();
+  const etc    = parseFloat(document.getElementById("etcFactor").value)||0;
+
+  document.getElementById("facProduct").textContent = fac.toFixed(3);
+
+  const calc    = std * sijeom * fac * etc;          // 산정단가
+  const decided = Math.round(calc/10000)*10000;      // 결정단가: 만원 단위 반올림 = ROUND(x,-4)
+  const total   = decided * area;                     // 시산가액
+
+  document.getElementById("rStd").textContent    = comma(std);
+  document.getElementById("rSijeom").textContent = sijeom.toFixed(5);
+  document.getElementById("rFac").textContent    = fac.toFixed(3);
+  document.getElementById("rEtc").textContent    = etc.toFixed(2);
+  document.getElementById("rCalc").textContent   = comma(calc);
+  document.getElementById("rDecided").textContent= comma(decided);
+  document.getElementById("rTotal").textContent  = comma(total);
+  document.getElementById("rFormula").textContent =
+    comma(std)+" × "+sijeom.toFixed(5)+" × "+fac.toFixed(3)+" × "+etc.toFixed(2)+
+    " = "+comma(calc)+"  →(만원반올림)  "+comma(decided)+" × "+area+"㎡ = "+comma(total)+"원";
+
+  window.__lastTotal = total;   // 검증용
+}
+
+// 엑셀 검증사례 값 세팅
+function loadExcelCase(){
+  document.getElementById("area").value=136;
+  document.getElementById("stdPrice").value=3533000;
+  document.getElementById("sijeom").value=1.00911;
+  document.querySelectorAll(".fac").forEach(el=>el.value=1);
+  document.getElementById("etcFactor").value=1.98;
+  recalc();
+  const box=document.getElementById("verifyBox");
+  const expected=960160000, got=window.__lastTotal;
+  const ok = Math.abs(got-expected) < 1; // 만원단위라 오차 없어야 정상
+  box.style.display="block";
+  box.className="verify "+(ok?"pass":"fail");
+  box.innerHTML = ok
+    ? "✅ 통과 — 시산가액 "+comma(got)+"원 = 엑셀 기준값 960,160,000원과 일치"
+    : "❌ 불일치 — 계산값 "+comma(got)+"원 vs 기준값 960,160,000원";
+}
+
+// 이벤트 바인딩
+document.querySelectorAll("input").forEach(el=>el.addEventListener("input",recalc));
+document.getElementById("sijeomText").addEventListener("input",recalcSijeom);
+
+recalcSijeom();
+recalc();
+</script>
+</body>
+</html>
