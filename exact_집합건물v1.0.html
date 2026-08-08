@@ -1578,7 +1578,7 @@ function Step3({cases,setCases,precs,setPrecs,pushUndo,ov,setOv,propType}){
         </div>}
       </div>}
     </div>
-    {cases.length>0&&(<div style={{overflowX:"auto",marginBottom:16}}>
+    {cases.length>0&&(<div style={{overflowX:"auto",marginBottom:16}}>{cases.filter(c=>dateAfterWarn(c.tradeDate,ov)).length>0&&<div style={{background:"#fef2f2",border:"1px solid #fecaca",color:"#b91c1c",borderRadius:6,padding:"6px 10px",marginBottom:6,fontSize:12,fontWeight:600}}>⚠️ 작성일자/기준시점 이후 거래사례 {cases.filter(c=>dateAfterWarn(c.tradeDate,ov)).length}건 — 시점수정 불가, 거래시점을 확인하세요</div>}
       <table style={S.tbl}><thead><tr>
         <th style={{...S.th,width:24}}></th><th style={{...S.th,width:28}}>표시</th><th style={{...S.th,width:28}}>선정</th>
         <th style={{...S.th,width:36}}>기호</th>
@@ -1593,7 +1593,7 @@ function Step3({cases,setCases,precs,setPrecs,pushUndo,ov,setOv,propType}){
         <CSortTh label="시점수정치" sortKey="timeAdj" style={{width:75}}/>
         <th style={{...S.th,width:24}}></th>
       </tr></thead><tbody>
-        {cases.map((c,i)=>(<DragRow key={c.id} index={i} onDrop={dropC} style={{background:c.isSelected?C.sel:c.isShown?"#fffde7":"#fff"}}>
+        {cases.map((c,i)=>(<DragRow key={c.id} index={i} onDrop={dropC} style={{background:dateAfterWarn(c.tradeDate,ov)?"#fee2e2":c.isSelected?C.sel:c.isShown?"#fffde7":"#fff"}}>
           <td style={S.td}><input type="checkbox" checked={c.isShown} onChange={()=>togC(c.id,"isShown")}/></td>
           <td style={S.td}><input type="checkbox" checked={c.isSelected} onChange={()=>togC(c.id,"isSelected")}/></td>
           <td style={{...S.td,fontWeight:700}}>#{c.symbol}</td>
@@ -1602,7 +1602,7 @@ function Step3({cases,setCases,precs,setPrecs,pushUndo,ov,setOv,propType}){
           <td style={S.td}><input style={{...S.inp,width:"100%",textAlign:"center",border:"none",background:"transparent",fontSize:12}} value={`${c.dong||""}/${c.floor||""}/${c.ho||""}`} onChange={e=>{const pts=e.target.value.split("/");updC(c.id,"dong",pts[0]||"");updC(c.id,"floor",pts[1]||"");updC(c.id,"ho",pts[2]||"");}} onKeyDown={gridArrowNav}/></td>
           <td style={S.tdL}><input style={{...S.inp,width:"100%",border:"none",background:"transparent",fontSize:12}} value={c.aptName||""} onChange={e=>updC(c.id,"aptName",e.target.value)} onKeyDown={gridArrowNav}/></td><td style={S.tdR}>{fmtDec(c.exclusiveArea,2)}</td>
           <td style={S.tdR}>{fmt(c.price)}</td><td style={S.tdR}>{fmt(c.unitPrice)}</td>
-          <td style={S.td}>{fmtDate(c.tradeDate)}</td><td style={S.td}><input style={{...S.inp,width:75,border:"none",background:"transparent",fontSize:11,textAlign:"center"}} value={c.approvalDate||""} onChange={e=>updC(c.id,"approvalDate",autoDateFmt(e.target.value))} onKeyDown={gridArrowNav}/></td>
+          <td style={S.td}>{fmtDate(c.tradeDate)}{dateAfterWarn(c.tradeDate,ov)?<span title={dateAfterWarn(c.tradeDate,ov)} style={{marginLeft:4,color:"#dc2626",fontWeight:700,cursor:"help"}}>⚠️</span>:null}</td><td style={S.td}><input style={{...S.inp,width:75,border:"none",background:"transparent",fontSize:11,textAlign:"center"}} value={c.approvalDate||""} onChange={e=>updC(c.id,"approvalDate",autoDateFmt(e.target.value))} onKeyDown={gridArrowNav}/></td>
           <td style={{...S.td,cursor:"pointer",color:c.timeAdj?C.acc:"#aaa",fontWeight:c.timeAdj?700:400}}
             onClick={()=>{setEditTimeId(c.id);setTmpTime(c.timeAdjDetail||"");if(c.timeAdjDetail)checkTimeWarnings(c.timeAdjDetail,c);else setTimeWarnings([]);const g=detectSjRegion(c.location,c.address,ov.jibun);if(g)setSjIdxRegion(g);const k=detectSjKind(c.aptName,c.buildingName);if(k)setSjIdxKind(k);}}>{c.timeAdj?fmtDec(c.timeAdj,5):"클릭"}</td>
           <td style={S.td}><span style={{cursor:"pointer",color:C.dng}} onClick={()=>delC(c.id)}>✕</span></td>
@@ -1675,7 +1675,7 @@ function Step3({cases,setCases,precs,setPrecs,pushUndo,ov,setOv,propType}){
         </div>}
       </div>}
     </div>
-    {precs.length>0&&(<div style={{overflowX:"auto"}}>
+    {precs.length>0&&(<div style={{overflowX:"auto"}}>{precs.filter(p=>dateAfterWarn(p.baseDate,ov)).length>0&&<div style={{background:"#fef2f2",border:"1px solid #fecaca",color:"#b91c1c",borderRadius:6,padding:"6px 10px",marginBottom:6,fontSize:12,fontWeight:600}}>⚠️ 작성일자/기준시점 이후 평가선례 {precs.filter(p=>dateAfterWarn(p.baseDate,ov)).length}건 — 기준시점을 확인하세요</div>}
       <table style={S.tbl}><thead><tr>
         <th style={{...S.th,width:24}}></th><th style={{...S.th,width:28}}>표시</th><th style={S.th}>기호</th>
         <PSortTh label="소재지" sortKey="location"/>
@@ -1688,7 +1688,7 @@ function Step3({cases,setCases,precs,setPrecs,pushUndo,ov,setOv,propType}){
         <PSortTh label="목적" sortKey="purpose"/>
         <th style={{...S.th,width:24}}></th>
       </tr></thead><tbody>
-        {precs.map((p,i)=>(<DragRow key={p.id} index={i} onDrop={dropP} style={{background:p.isShown?"#fffde7":"#fff"}}>
+        {precs.map((p,i)=>(<DragRow key={p.id} index={i} onDrop={dropP} style={{background:dateAfterWarn(p.baseDate,ov)?"#fee2e2":p.isShown?"#fffde7":"#fff"}}>
           <td style={S.td}><input type="checkbox" checked={p.isShown} onChange={()=>togP(p.id)}/></td>
           <td style={{...S.td,fontWeight:700}}>{p.selected}</td>
           <td style={S.tdL}><input style={{...S.inp,width:"100%",textAlign:"left"}} value={`${p.location} ${p.jibun}`} onChange={e=>{const v=e.target.value;const parts=v.split(" ");const loc=parts.slice(0,-1).join(" ")||v;const jib=parts.length>1?parts[parts.length-1]:"";updP(p.id,"location",loc);updP(p.id,"jibun",jib);}}/></td>
@@ -1696,7 +1696,7 @@ function Step3({cases,setCases,precs,setPrecs,pushUndo,ov,setOv,propType}){
           <td style={S.tdL}><input style={{...S.inp,width:"100%",textAlign:"left"}} value={p.buildingName||""} onChange={e=>updP(p.id,"buildingName",e.target.value)}/></td>
           <td style={S.tdR}>{fmtDec(p.exclusiveArea,2)}</td>
           <td style={S.tdR}>{fmt(Math.round((p.appraiseAmount||0)/1000))}</td><td style={S.tdR}>{fmt(p.unitPrice)}</td>
-          <td style={S.td}><input style={{...S.inp,width:"100%",textAlign:"center"}} value={p.baseDate||""} onChange={e=>updP(p.id,"baseDate",autoDateFmt(e.target.value))}/></td>
+          <td style={S.td}><input style={{...S.inp,width:"100%",textAlign:"center"}} value={p.baseDate||""} onChange={e=>updP(p.id,"baseDate",autoDateFmt(e.target.value))}/>{dateAfterWarn(p.baseDate,ov)?<span title={dateAfterWarn(p.baseDate,ov)} style={{marginLeft:2,color:"#dc2626",fontWeight:700,cursor:"help"}}>⚠️</span>:null}</td>
           <td style={S.td}><input style={{...S.inp,width:"100%",textAlign:"center"}} value={p.purpose||""} onChange={e=>updP(p.id,"purpose",e.target.value)}/></td>
           <td style={S.td}><span style={{cursor:"pointer",color:C.dng}} onClick={()=>delP(p.id)}>✕</span></td>
         </DragRow>))}
@@ -2581,6 +2581,7 @@ const insertToice=(xml,value)=>{
   return xml.slice(0,cellStart)+cell+xml.slice(cellEnd);
 };
 
+const dateAfterWarn=(dateStr,ov)=>{const dn=s=>{const m=String(s||"").match(/(\d{4})[.\-\/]\s*(\d{1,2})[.\-\/]\s*(\d{1,2})/);return m?(+m[1])*10000+(+m[2])*100+(+m[3]):null;};const t=dn(dateStr);if(t==null)return"";const wd=dn(ov&&ov.writeDate),bd=dn(ov&&ov.baseDate);if(wd!=null&&t>wd)return"작성일자 이후";if(bd!=null&&t>bd)return"기준시점 이후";return"";};
 function buildData(ov,cases,precs,comp,factors,fM,nM,area,fU,rawT,fT,uD,uMl,tD,tMl,propType){
   const sc=comp[0]||{};
   const shownC=cases.filter(c=>c.isShown);
@@ -4450,7 +4451,7 @@ function Step3({cases,setCases,precs,setPrecs,pushUndo,ov,setOv,propType,setProp
         </div>}
       </div>}
     </div>
-    {cases.length>0&&(<div style={{overflowX:"auto",marginBottom:16}}>
+    {cases.length>0&&(<div style={{overflowX:"auto",marginBottom:16}}>{cases.filter(c=>dateAfterWarn(c.tradeDate,ov)).length>0&&<div style={{background:"#fef2f2",border:"1px solid #fecaca",color:"#b91c1c",borderRadius:6,padding:"6px 10px",marginBottom:6,fontSize:12,fontWeight:600}}>⚠️ 작성일자/기준시점 이후 거래사례 {cases.filter(c=>dateAfterWarn(c.tradeDate,ov)).length}건 — 시점수정 불가, 거래시점을 확인하세요</div>}
       <table style={S.tbl}><thead><tr>
         <th style={{...S.th,width:24}}></th><th style={{...S.th,width:28}}>표시</th><th style={{...S.th,width:28}}>선정</th>
         <th style={{...S.th,width:36}}>기호</th>
@@ -4465,7 +4466,7 @@ function Step3({cases,setCases,precs,setPrecs,pushUndo,ov,setOv,propType,setProp
         <CSortTh label="시점수정치" sortKey="timeAdj" style={{width:75}}/>
         <th style={{...S.th,width:24}}></th>
       </tr></thead><tbody>
-        {cases.map((c,i)=>(<DragRow key={c.id} index={i} onDrop={dropC} style={{background:c.isSelected?C.sel:c.isShown?"#fffde7":"#fff"}}>
+        {cases.map((c,i)=>(<DragRow key={c.id} index={i} onDrop={dropC} style={{background:dateAfterWarn(c.tradeDate,ov)?"#fee2e2":c.isSelected?C.sel:c.isShown?"#fffde7":"#fff"}}>
           <td style={S.td}><input type="checkbox" checked={c.isShown} onChange={()=>togC(c.id,"isShown")}/></td>
           <td style={S.td}><input type="checkbox" checked={c.isSelected} onChange={()=>togC(c.id,"isSelected")}/></td>
           <td style={{...S.td,fontWeight:700}}>#{c.symbol}</td>
@@ -4474,7 +4475,7 @@ function Step3({cases,setCases,precs,setPrecs,pushUndo,ov,setOv,propType,setProp
           <td style={S.td}><input style={{...S.inp,width:"100%",textAlign:"center",border:"none",background:"transparent",fontSize:12}} value={`${c.dong||""}/${c.floor||""}/${c.ho||""}`} onChange={e=>{const pts=e.target.value.split("/");updC(c.id,"dong",pts[0]||"");updC(c.id,"floor",pts[1]||"");updC(c.id,"ho",pts[2]||"");}} onKeyDown={gridArrowNav}/></td>
           <td style={S.tdL}><input style={{...S.inp,width:"100%",border:"none",background:"transparent",fontSize:12}} value={c.aptName||""} onChange={e=>updC(c.id,"aptName",e.target.value)} onKeyDown={gridArrowNav}/></td><td style={S.tdR}>{fmtDec(c.exclusiveArea,2)}</td>
           <td style={S.tdR}>{fmt(c.price)}</td><td style={S.tdR}>{fmt(c.unitPrice)}</td>
-          <td style={S.td}>{fmtDate(c.tradeDate)}</td><td style={S.td}><input style={{...S.inp,width:75,border:"none",background:"transparent",fontSize:11,textAlign:"center"}} value={c.approvalDate||""} onChange={e=>updC(c.id,"approvalDate",autoDateFmt(e.target.value))} onKeyDown={gridArrowNav}/></td>
+          <td style={S.td}>{fmtDate(c.tradeDate)}{dateAfterWarn(c.tradeDate,ov)?<span title={dateAfterWarn(c.tradeDate,ov)} style={{marginLeft:4,color:"#dc2626",fontWeight:700,cursor:"help"}}>⚠️</span>:null}</td><td style={S.td}><input style={{...S.inp,width:75,border:"none",background:"transparent",fontSize:11,textAlign:"center"}} value={c.approvalDate||""} onChange={e=>updC(c.id,"approvalDate",autoDateFmt(e.target.value))} onKeyDown={gridArrowNav}/></td>
           <td style={{...S.td,cursor:"pointer",color:c.timeAdj?C.acc:"#aaa",fontWeight:c.timeAdj?700:400}}
             onClick={()=>{setEditTimeId(c.id);setTmpTime(c.timeAdjDetail||"");if(c.timeAdjDetail)checkTimeWarnings(c.timeAdjDetail,c);else setTimeWarnings([]);const g=detectSjRegion(c.location,c.address,ov.jibun);if(g)setSjIdxRegion(g);const k=detectSjKind(c.aptName,c.buildingName);if(k)setSjIdxKind(k);}}>{c.timeAdj?fmtDec(c.timeAdj,5):"클릭"}</td>
           <td style={S.td}><span style={{cursor:"pointer",color:C.dng}} onClick={()=>delC(c.id)}>✕</span></td>
@@ -4551,7 +4552,7 @@ function Step3({cases,setCases,precs,setPrecs,pushUndo,ov,setOv,propType,setProp
         </div>}
       </div>}
     </div>
-    {precs.length>0&&(<div style={{overflowX:"auto"}}>
+    {precs.length>0&&(<div style={{overflowX:"auto"}}>{precs.filter(p=>dateAfterWarn(p.baseDate,ov)).length>0&&<div style={{background:"#fef2f2",border:"1px solid #fecaca",color:"#b91c1c",borderRadius:6,padding:"6px 10px",marginBottom:6,fontSize:12,fontWeight:600}}>⚠️ 작성일자/기준시점 이후 평가선례 {precs.filter(p=>dateAfterWarn(p.baseDate,ov)).length}건 — 기준시점을 확인하세요</div>}
       <table style={S.tbl}><thead><tr>
         <th style={{...S.th,width:24}}></th><th style={{...S.th,width:28}}>표시</th><th style={S.th}>기호</th>
         <PSortTh label="소재지" sortKey="location"/>
@@ -4564,7 +4565,7 @@ function Step3({cases,setCases,precs,setPrecs,pushUndo,ov,setOv,propType,setProp
         <PSortTh label="목적" sortKey="purpose"/>
         <th style={{...S.th,width:24}}></th>
       </tr></thead><tbody>
-        {precs.map((p,i)=>(<DragRow key={p.id} index={i} onDrop={dropP} style={{background:p.isShown?"#fffde7":"#fff"}}>
+        {precs.map((p,i)=>(<DragRow key={p.id} index={i} onDrop={dropP} style={{background:dateAfterWarn(p.baseDate,ov)?"#fee2e2":p.isShown?"#fffde7":"#fff"}}>
           <td style={S.td}><input type="checkbox" checked={p.isShown} onChange={()=>togP(p.id)}/></td>
           <td style={{...S.td,fontWeight:700}}>{p.selected}</td>
           <td style={S.tdL}><input style={{...S.inp,width:"100%",textAlign:"left"}} value={`${p.location} ${p.jibun}`} onChange={e=>{const v=e.target.value;const parts=v.split(" ");const loc=parts.slice(0,-1).join(" ")||v;const jib=parts.length>1?parts[parts.length-1]:"";updP(p.id,"location",loc);updP(p.id,"jibun",jib);}}/></td>
@@ -4572,7 +4573,7 @@ function Step3({cases,setCases,precs,setPrecs,pushUndo,ov,setOv,propType,setProp
           <td style={S.tdL}><input style={{...S.inp,width:"100%",textAlign:"left"}} value={p.buildingName||""} onChange={e=>updP(p.id,"buildingName",e.target.value)}/></td>
           <td style={S.tdR}>{fmtDec(p.exclusiveArea,2)}</td>
           <td style={S.tdR}>{fmt(Math.round((p.appraiseAmount||0)/1000))}</td><td style={S.tdR}>{fmt(p.unitPrice)}</td>
-          <td style={S.td}><input style={{...S.inp,width:"100%",textAlign:"center"}} value={p.baseDate||""} onChange={e=>updP(p.id,"baseDate",autoDateFmt(e.target.value))}/></td>
+          <td style={S.td}><input style={{...S.inp,width:"100%",textAlign:"center"}} value={p.baseDate||""} onChange={e=>updP(p.id,"baseDate",autoDateFmt(e.target.value))}/>{dateAfterWarn(p.baseDate,ov)?<span title={dateAfterWarn(p.baseDate,ov)} style={{marginLeft:2,color:"#dc2626",fontWeight:700,cursor:"help"}}>⚠️</span>:null}</td>
           <td style={S.td}><input style={{...S.inp,width:"100%",textAlign:"center"}} value={p.purpose||""} onChange={e=>updP(p.id,"purpose",e.target.value)}/></td>
           <td style={S.td}><span style={{cursor:"pointer",color:C.dng}} onClick={()=>delP(p.id)}>✕</span></td>
         </DragRow>))}
