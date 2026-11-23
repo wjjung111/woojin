@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>토지·건물 본건조회 — EXACT</title>
+<style>
+  :root{
+    --bg:#eef1f5; --card:#ffffff; --line:#dfe3ea; --line2:#eef1f6;
+    --ink:#1f2733; --sub:#6b7686; --faint:#9aa4b2;
+    --accent:#2b6cb0; --accent-soft:#e8f0fb;
+    --land:#2f855a; --land-soft:#e6f4ec;
+    --bldg:#b7791f; --bldg-soft:#fbf3e0;
+    --warn:#c0392b;
+  }
+  *{box-sizing:border-box}
+  body{font-family:'Pretendard','Malgun Gothic','맑은 고딕',sans-serif;margin:0;background:var(--bg);color:var(--ink);font-size:14px;line-height:1.45}
+  .wrap{max-width:1080px;margin:0 auto;padding:20px 20px 60px}
+
+  /* ---- 상단 타이틀 ---- */
+  header.top{display:flex;align-items:baseline;gap:10px;margin:6px 2px 16px}
+  header.top h1{font-size:21px;margin:0;letter-spacing:-.3px}
+  header.top .badge{font-size:11px;color:#fff;background:var(--accent);border-radius:20px;padding:2px 9px;font-weight:600}
+  header.top small{color:var(--sub);font-size:12.5px}
+
+  /* ---- 카드 공통 ---- */
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;box-shadow:0 1px 2px rgba(20,30,50,.04);margin:0 0 16px}
+  .card > .hd{display:flex;align-items:center;gap:8px;padding:12px 16px;border-bottom:1px solid var(--line2)}
+  .card > .hd .dot{width:9px;height:9px;border-radius:50%}
+  .card > .hd h2{font-size:15px;margin:0;font-weight:700}
+  .card > .hd .tag{margin-left:auto;font-size:11.5px;color:var(--faint)}
+  .card > .bd{padding:16px}
+
+  /* ---- 주소 입력 ---- */
+  .search .bd{display:flex;flex-direction:column;gap:10px}
+  .searchrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .searchrow input[type=text]{flex:1;min-width:260px;font:inherit;font-size:15px;padding:11px 13px;border:1px solid #cbd2dc;border-radius:8px}
+  .searchrow input[type=text]:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+  button{font:inherit;font-weight:600;padding:11px 20px;border:1px solid var(--accent);background:var(--accent);color:#fff;border-radius:8px;cursor:pointer;white-space:nowrap}
+  button:hover{filter:brightness(.96)}
+  button.ghost{background:#fff;color:var(--accent)}
+  button.sm{padding:6px 12px;font-size:12.5px;font-weight:600}
+  button:disabled{opacity:.5;cursor:default}
+  .hint{color:var(--faint);font-size:12px}
+  .keyline{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:12.5px;color:var(--sub)}
+  .keyline input{font:inherit;font-size:12.5px;padding:6px 8px;border:1px solid #d3d9e2;border-radius:6px;width:230px}
+  details.keys summary{cursor:pointer;color:var(--sub);font-size:12.5px;user-select:none}
+  details.keys[open] summary{margin-bottom:8px}
+  details.keys .bd2{display:flex;flex-direction:column;gap:8px;padding-left:2px}
+
+  /* ---- 본건 요약 바 ---- */
+  .summary{display:none;background:linear-gradient(90deg,#243447,#33475f);color:#fff;border-radius:12px;padding:14px 18px;margin:0 0 16px}
+  .summary.on{display:block}
+  .summary .addr{font-size:17px;font-weight:700;letter-spacing:-.3px}
+  .summary .meta{margin-top:6px;display:flex;gap:18px;flex-wrap:wrap;font-size:13px;color:#c9d4e2}
+  .summary .meta b{color:#fff;font-weight:600}
+  .summary .meta .sep{opacity:.4}
+
+  /* ---- 2단 레이아웃 ---- */
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+  @media(max-width:840px){.cols{grid-template-columns:1fr}}
+
+  .dot.land{background:var(--land)} .dot.bldg{background:var(--bldg)}
+  .land-hd{background:var(--land-soft)} .bldg-hd{background:var(--bldg-soft)}
+
+  /* ---- 필드 그리드 ---- */
+  .fields{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line2);border:1px solid var(--line2);border-radius:8px;overflow:hidden}
+  .fields .f{background:#fff;padding:9px 12px;min-height:52px}
+  .fields .f.full{grid-column:1 / -1}
+  .fields .f .lbl{font-size:11.5px;color:var(--sub);margin-bottom:3px}
+  .fields .f .val{font-size:14.5px;font-weight:600;color:var(--ink);word-break:break-all}
+  .fields .f .val.empty{color:var(--faint);font-weight:400}
+  .fields .f .val .unit{font-size:12px;color:var(--sub);font-weight:400;margin-left:2px}
+
+  /* ---- 층별현황 표 ---- */
+  .subhd{font-size:12.5px;font-weight:700;color:var(--sub);margin:16px 0 7px}
+  table{border-collapse:collapse;width:100%;font-size:12.5px}
+  th,td{border:1px solid #e2e6ec;padding:6px 8px;text-align:center}
+  th{background:#f4f6f9;color:var(--sub);font-weight:600}
+  td.l{text-align:left}
+  tbody tr:nth-child(even){background:#fafbfc}
+  tfoot td{background:#f4f6f9;font-weight:700}
+
+  /* ---- 상태/빈화면 ---- */
+  #status{font-size:13px;color:var(--sub);min-height:18px}
+  #status.err{color:var(--warn)}
+  .placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:44px 20px;color:var(--faint);text-align:center}
+  .placeholder .big{font-size:34px;margin-bottom:8px;opacity:.6}
+  .placeholder .t{font-size:14px}
+  .results{display:none} .results.on{display:block}
+
+  .src{margin-top:14px;font-size:11.5px;color:var(--faint);display:flex;gap:6px;align-items:center}
+  .src b{color:var(--sub);font-weight:600}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <h1>토지·건물 본건조회</h1>
+    <span class="badge">EXACT</span>
+    <small>주소 한 번 입력 → 토지·건물 정보 자동 수신 (감정평가 원가법·공시지가기준법 기초자료)</small>
+  </header>
+
+  <!-- 주소 입력 -->
+  <div class="card search">
+    <div class="hd"><span class="dot" style="background:var(--accent)"></span><h2>본건 주소</h2><span class="tag">지번주소 권장 · 예) 서울특별시 영등포구 대림동 746-5</span></div>
+    <div class="bd">
+      <div class="searchrow">
+        <input type="text" id="addrInput" placeholder="서울특별시 영등포구 대림동 746-5" autocomplete="off">
+        <button id="btnQuery">조회</button>
+        <button class="ghost" id="btnSample">샘플 보기</button>
+      </div>
+      <div id="status">주소를 입력하고 [조회]를 누르면 토지·건물 정보가 아래에 채워집니다.</div>
+      <details class="keys">
+        <summary>🔑 API 인증키 설정 (브이월드 · 건축물대장) — 처음 한 번만</summary>
+        <div class="bd2">
+          <div class="keyline"><b style="min-width:118px;display:inline-block">브이월드 (토지)</b>
+            <input type="password" id="keyVworld" placeholder="8D5CB15B-....-....-....">
+            <button class="ghost sm" id="btnSaveVworld">저장</button>
+            <span class="hint" id="hintVworld"></span></div>
+          <div class="keyline"><b style="min-width:118px;display:inline-block">건축물대장 (건물)</b>
+            <input type="password" id="keyBldg" placeholder="data.go.kr 서비스키">
+            <button class="ghost sm" id="btnSaveBldg">저장</button>
+            <span class="hint" id="hintBldg"></span></div>
+          <div class="hint">키는 이 브라우저에만 저장됩니다(localStorage). 저장소·서버로 전송되지 않습니다. 건축물대장 API는 브라우저 직접호출이 막혀(CORS) 로컬 실행 환경에서 수신합니다.</div>
+        </div>
+      </details>
+    </div>
+  </div>
+
+  <!-- 본건 요약 -->
+  <div class="summary" id="summary">
+    <div class="addr" id="sumAddr">—</div>
+    <div class="meta" id="sumMeta"></div>
+  </div>
+
+  <!-- 빈 화면 안내 -->
+  <div class="card" id="emptyCard">
+    <div class="placeholder">
+      <div class="big">🏗️</div>
+      <div class="t">아직 조회된 본건이 없습니다.<br>위에 주소를 입력하거나 <b>[샘플 보기]</b>로 화면 구성을 확인하세요.</div>
+    </div>
+  </div>
+
+  <!-- 결과: 토지 + 건물 -->
+  <div class="results" id="results">
+    <div class="cols">
+
+      <!-- 토지 -->
+      <div class="card">
+        <div class="hd land-hd"><span class="dot land"></span><h2>토지</h2><span class="tag" id="landSrc">브이월드 · 토지특성/공시지가</span></div>
+        <div class="bd">
+          <div class="fields" id="landFields"></div>
+          <div class="src"><b>출처</b> 브이월드 토지특성·개별공시지가 API (지번 검색 → PNU → 특성)</div>
+        </div>
+      </div>
+
+      <!-- 건물 -->
+      <div class="card">
+        <div class="hd bldg-hd"><span class="dot bldg"></span><h2>건물</h2><span class="tag" id="bldgSrc">건축물대장 · 표제부</span></div>
+        <div class="bd">
+          <div class="fields" id="bldgFields"></div>
+
+          <div class="subhd">층별 현황 (건축물대장 층별개요)</div>
+          <div style="overflow-x:auto">
+            <table id="floorTable">
+              <thead><tr><th style="width:60px">층</th><th>구조</th><th>용도</th><th style="width:92px">면적(㎡)</th></tr></thead>
+              <tbody id="floorBody"></tbody>
+              <tfoot><tr><td colspan="3">연면적 합계</td><td id="floorSum">—</td></tr></tfoot>
+            </table>
+          </div>
+          <div class="src"><b>출처</b> 건축물대장 표제부·층별개요 API (사용승인일 → 경과연수 → 잔가율 산정 기초)</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<script>
+'use strict';
+
+/* ============================================================
+   본건조회 — 화면(UI) 우선 버전
+   지금은 샘플 데이터로 레이아웃/흐름을 확정하는 단계.
+   실제 API 연동(브이월드 토지 + 건축물대장 건물)은 확정 후 붙인다.
+   ============================================================ */
+
+// ---- localStorage 인증키 (land.html과 동일 키 공유) ----
+var KEY_VWORLD='exact-vworld-key', KEY_BLDG='exact-bldg-key';
+function lsGet(k){try{return localStorage.getItem(k)||'';}catch(e){console.error('localStorage 읽기 실패',e);return '';}}
+function lsSet(k,v){try{localStorage.setItem(k,v);}catch(e){console.error('localStorage 저장 실패',e);}}
+function bindKey(inputId,btnId,hintId,storeKey){
+  var hint=document.getElementById(hintId);
+  function refresh(){var v=lsGet(storeKey);hint.textContent=v?('저장됨 '+v.slice(0,8)+'…'):'미저장';}
+  document.getElementById(btnId).onclick=function(){
+    var v=document.getElementById(inputId).value.trim();
+    if(!v){alert('키를 입력하세요');return;}
+    lsSet(storeKey,v);document.getElementById(inputId).value='';refresh();
+  };
+  refresh();
+}
+bindKey('keyVworld','btnSaveVworld','hintVworld',KEY_VWORLD);
+bindKey('keyBldg','btnSaveBldg','hintBldg',KEY_BLDG);
+
+// ---- 필드 정의: 라벨 + 데이터키 + 단위 + full(한 줄 차지) ----
+var LAND_FIELDS=[
+  {k:'소재지', key:'address', full:true},
+  {k:'지번',   key:'jibun'},
+  {k:'지목',   key:'jimok'},
+  {k:'면적',   key:'area', unit:'㎡'},
+  {k:'공시지가', key:'price', unit:'원/㎡'},
+  {k:'용도지역', key:'zone'},
+  {k:'용도지구', key:'district'},
+  {k:'이용상황', key:'useState'},
+  {k:'형상',   key:'shape'},
+  {k:'지세',   key:'topo'},
+  {k:'도로교통', key:'road'},
+  {k:'계획시설', key:'facility'},
+];
+var BLDG_FIELDS=[
+  {k:'건물명칭', key:'name', full:true},
+  {k:'주용도',  key:'mainUse'},
+  {k:'구조',    key:'structure'},
+  {k:'지붕',    key:'roof'},
+  {k:'층수',    key:'floors'},
+  {k:'사용승인일', key:'approvalDate'},
+  {k:'대지면적', key:'landArea', unit:'㎡'},
+  {k:'건축면적', key:'buildArea', unit:'㎡'},
+  {k:'연면적',  key:'totalArea', unit:'㎡'},
+  {k:'건폐율',  key:'coverRatio', unit:'%'},
+  {k:'용적률',  key:'floorRatio', unit:'%'},
+  {k:'주차대수', key:'parking', unit:'대'},
+];
+
+function fmtNum(v){var n=Number(String(v).replace(/,/g,''));return isNaN(n)?v:n.toLocaleString('ko-KR');}
+function renderFields(containerId,defs,data){
+  var box=document.getElementById(containerId);box.innerHTML='';
+  defs.forEach(function(d){
+    var f=document.createElement('div');f.className='f'+(d.full?' full':'');
+    var raw=data?data[d.key]:'';
+    var has=raw!==undefined&&raw!==null&&raw!=='';
+    var shown=has?(d.unit&&/^[0-9,\.]+$/.test(String(raw))?fmtNum(raw):raw):'—';
+    f.innerHTML='<div class="lbl">'+d.k+'</div><div class="val'+(has?'':' empty')+'">'+shown+
+      (has&&d.unit?'<span class="unit">'+d.unit+'</span>':'')+'</div>';
+    box.appendChild(f);
+  });
+}
+function renderFloors(floors){
+  var body=document.getElementById('floorBody');body.innerHTML='';
+  var sum=0;
+  (floors||[]).forEach(function(fl){
+    var tr=document.createElement('tr');
+    tr.innerHTML='<td>'+fl.floor+'</td><td class="l">'+fl.structure+'</td><td class="l">'+fl.use+'</td><td>'+fmtNum(fl.area)+'</td>';
+    body.appendChild(tr);
+    var a=Number(String(fl.area).replace(/,/g,''));if(!isNaN(a))sum+=a;
+  });
+  document.getElementById('floorSum').textContent=sum?fmtNum(sum.toFixed(2)):'—';
+}
+
+function showResult(data){
+  document.getElementById('emptyCard').style.display='none';
+  document.getElementById('results').classList.add('on');
+  var s=document.getElementById('summary');s.classList.add('on');
+  document.getElementById('sumAddr').textContent=data.land.address||data.address||'—';
+  var m=[];
+  if(data.land.zone)m.push('<span>용도지역 <b>'+data.land.zone+'</b></span>');
+  if(data.land.area)m.push('<span>토지 <b>'+fmtNum(data.land.area)+'㎡</b></span>');
+  if(data.bldg.totalArea)m.push('<span>건물 연면적 <b>'+fmtNum(data.bldg.totalArea)+'㎡</b></span>');
+  if(data.bldg.structure)m.push('<span><b>'+data.bldg.structure+'</b></span>');
+  if(data.bldg.approvalDate)m.push('<span>사용승인 <b>'+data.bldg.approvalDate+'</b></span>');
+  document.getElementById('sumMeta').innerHTML=m.join('<span class="sep">·</span>');
+  renderFields('landFields',LAND_FIELDS,data.land);
+  renderFields('bldgFields',BLDG_FIELDS,data.bldg);
+  renderFloors(data.bldg.floorList);
+}
+
+// ---- 샘플 데이터 (화면 확인용, 실제 조회로 대체 예정) ----
+var SAMPLE={
+  address:'서울특별시 영등포구 대림동 746-5',
+  land:{
+    address:'서울특별시 영등포구 대림동 746-5', jibun:'746-5', jimok:'대', area:'136',
+    price:'3,389,000', zone:'2종일주', district:'', useState:'단독', shape:'세장형',
+    topo:'평지', road:'세로(가)', facility:'없음'
+  },
+  bldg:{
+    name:'다가구주택', mainUse:'단독주택(다가구주택)', structure:'철근콘크리트조', roof:'(철근)콘크리트',
+    floors:'지상 4층 / 지하 1층', approvalDate:'2004-09-10',
+    landArea:'136', buildArea:'80.64', totalArea:'403.20',
+    coverRatio:'59.29', floorRatio:'237.18', parking:'3',
+    floorList:[
+      {floor:'지1층', structure:'철근콘크리트조', use:'주차장·창고', area:'80.64'},
+      {floor:'1층',  structure:'철근콘크리트조', use:'다가구주택(2세대)', area:'80.64'},
+      {floor:'2층',  structure:'철근콘크리트조', use:'다가구주택(2세대)', area:'80.64'},
+      {floor:'3층',  structure:'철근콘크리트조', use:'다가구주택(2세대)', area:'80.64'},
+      {floor:'4층',  structure:'철근콘크리트조', use:'다가구주택(1세대)', area:'80.64'}
+    ]
+  }
+};
+
+function setStatus(msg,isErr){var el=document.getElementById('status');el.textContent=msg;el.className=isErr?'err':'';}
+
+document.getElementById('btnSample').onclick=function(){
+  showResult(SAMPLE);
+  setStatus('샘플 본건 표시 중 — 실제 조회 시 이 자리에 API 결과가 채워집니다.');
+};
+document.getElementById('btnQuery').onclick=function(){
+  var addr=document.getElementById('addrInput').value.trim();
+  if(!addr){alert('본건 주소를 입력하세요');return;}
+  // TODO: 실제 API 연동 — (1) 브이월드 토지특성  (2) 건축물대장 표제부/층별개요
+  setStatus('※ 화면 구성 단계입니다. 실제 조회 API는 아직 연결되지 않았습니다. 지금은 [샘플 보기]로 레이아웃을 확인하세요.',true);
+};
+document.getElementById('addrInput').addEventListener('keydown',function(e){if(e.key==='Enter')document.getElementById('btnQuery').click();});
+</script>
+</body>
+</html>
